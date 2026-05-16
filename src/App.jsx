@@ -134,7 +134,7 @@ const THEMES = {
     light: "#f3f4f6", text: "#111827", subtext: "#9ca3af",
     card: "white", tab: "#f3f4f6",
     button: "linear-gradient(135deg,#374151,#111827)",
-    tabIcons: ["01","02","03","04","05","06"],
+    tabIcons: ["C","St","G","F","L","S"],
     emojiSet: null,
   },
   latte: {
@@ -145,7 +145,7 @@ const THEMES = {
     light: "#fdf0e0", text: "#3d2b1f", subtext: "#8b6f5e",
     card: "#fffcf8", tab: "#f5ede0",
     button: "linear-gradient(135deg,#b8895a,#92694a)",
-    tabIcons: ["01","02","03","04","05","06"],
+    tabIcons: ["C","St","G","F","L","S"],
     emojiSet: null,
   },
   forest: {
@@ -432,6 +432,7 @@ export default function AllbugsLife() {
   const [showCycleSetup,setShowCycleSetup] = useState(false);
   const [isNewAccount,setIsNewAccount] = useState(true);
   const [themeName,setThemeName] = useState("bloom");
+  const [showPhase,setShowPhase] = useState(true);
 
   const [journal,setJournal] = useState({});
   const [journalDay,setJournalDay] = useState(null);
@@ -499,6 +500,7 @@ export default function AllbugsLife() {
   useEffect(()=>{if(loaded&&userId)S.set("entries",entries,userId);},[entries,loaded,userId]);
   useEffect(()=>{if(loaded&&userId&&cycleStartDate)S.set("cycleStartDate",cycleStartDate,userId);},[cycleStartDate,loaded,userId]);
   useEffect(()=>{if(loaded&&userId)S.set("theme",themeName,userId);},[themeName,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("showPhase",showPhase,userId);},[showPhase,loaded,userId]);
   useEffect(()=>{if(loaded&&userId)S.set("cycleLength",cycleLength,userId);},[cycleLength,loaded,userId]);
 
   const saveProfile = async () => {
@@ -563,7 +565,7 @@ export default function AllbugsLife() {
     setScreen("setup");
     setMyUsername(""); setMyDisplay(""); setMyAvatar("🐛"); setMyPin("");
     setData({}); setHabits(DEFAULT_HABITS); setJournal({}); setGoals({});
-    setFriends({luna_girl:"friend"}); setReactions({}); setCycleStartDate(null); setCycleLength(20); setIsNewAccount(true); setThemeName("bloom");
+    setFriends({luna_girl:"friend"}); setReactions({}); setCycleStartDate(null); setCycleLength(20); setIsNewAccount(true); setThemeName("bloom"); setShowPhase(true);
   };
   const prevMonth=()=>{if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1);setSelectedDay(null);};
   const nextMonth=()=>{if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1);setSelectedDay(null);};
@@ -609,6 +611,8 @@ export default function AllbugsLife() {
       const cd=await S.get("cycleStartDate",savedUserId); if(cd)setCycleStartDate(cd);
       const cl=await S.get("cycleLength",savedUserId); if(cl)setCycleLength(cl);
       const th=await S.get("theme",savedUserId); if(th)setThemeName(th);
+      const sp=await S.get("showPhase",savedUserId); if(sp!==null)setShowPhase(sp);
+      const sp=await S.get("showPhase",savedUserId); if(sp!==null)setShowPhase(sp);
       setScreen("app");
       setTimeout(()=>setLoaded(true), 300);
     } catch(e) { setPinError("Something went wrong, try again"); }
@@ -842,7 +846,7 @@ export default function AllbugsLife() {
         {view==="grid"&&(
           <div>
             {/* Phase card */}
-            <div style={{background:ph.light,borderRadius:14,padding:14,marginBottom:14,border:`1.5px solid ${ph.accent}33`}}>
+            {showPhase&&<div style={{background:ph.light,borderRadius:14,padding:14,marginBottom:14,border:`1.5px solid ${ph.accent}33`}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontSize:24}}>{ph.emoji}</span>
@@ -872,7 +876,7 @@ export default function AllbugsLife() {
                 <p style={{margin:0,fontSize:11,color:"#374151",lineHeight:1.6}}>{ph.adhd}</p>
               </div>
               <p style={{margin:"8px 0 0",fontSize:11,color:ph.accent,fontWeight:600,textAlign:"center"}}>{ph.energy}</p>
-            </div>
+            </div>}
 
             {/* Legend */}
             <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
@@ -1062,6 +1066,20 @@ export default function AllbugsLife() {
                     <div style={{fontSize:11,fontWeight:600,color:themeName===key?theme.accent:T.subtext}}>{theme.name}</div>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Phase toggle */}
+            <div style={{background:T.card,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:`1.5px solid ${T.border}`}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <h3 style={{margin:"0 0 2px",fontSize:14,fontWeight:700,color:T.text}}>🌙 Menstrual Phase Card</h3>
+                  <p style={{margin:0,fontSize:11,color:T.subtext,fontStyle:"italic"}}>Show or hide the phase guide on your calendar</p>
+                </div>
+                <button onClick={()=>setShowPhase(p=>!p)}
+                  style={{width:52,height:28,borderRadius:99,border:"none",background:showPhase?T.accent:"#d1d5db",cursor:"pointer",position:"relative",transition:"all 0.2s",flexShrink:0}}>
+                  <div style={{width:22,height:22,borderRadius:"50%",background:"white",position:"absolute",top:3,left:showPhase?27:3,transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
+                </button>
               </div>
             </div>
 
