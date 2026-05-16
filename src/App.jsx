@@ -527,6 +527,7 @@ export default function AllbugsLife() {
       localStorage.setItem("userId", myUsername);
       localStorage.setItem("userPin", myPin);
       window.__userId = myUsername;
+      setLoaded(false);
       setUserId(myUsername);
       const savedUserId = myUsername;
       const d=await S.get("habitData",savedUserId); if(d)setData(d);
@@ -539,8 +540,8 @@ export default function AllbugsLife() {
       const en=await S.get("entries",savedUserId); if(en)setEntries(en);
       const cd=await S.get("cycleStartDate",savedUserId); if(cd)setCycleStartDate(cd);
       const cl=await S.get("cycleLength",savedUserId); if(cl)setCycleLength(cl);
-      setLoaded(true);
       setScreen("app");
+      setTimeout(()=>setLoaded(true), 300);
     } catch(e) { setPinError("Something went wrong, try again"); }
   };
 
