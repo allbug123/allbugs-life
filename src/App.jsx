@@ -116,62 +116,66 @@ const EMOJI_OPTIONS = ["⭐","🎯","💪","🧘","📚","🎨","💧","🏃","�
 
 const THEMES = {
   bloom: {
-    name: "Bloom", emoji: "🌸",
+    name: "Bloom", emoji: "🌸", useEmoji: true,
     bg: "linear-gradient(135deg,#fdf4ff,#f0fdf4,#fff1f2)",
     header: "linear-gradient(135deg,#f3e8ff,#fce7f3,#d1fae5)",
-    border: "#e9d5ff",
-    accent: "#a855f7",
-    accent2: "#f472b6",
-    light: "#f3e8ff",
-    text: "#1f2937",
-    subtext: "#6b7280",
-    card: "white",
-    tab: "#f3f4f6",
+    border: "#e9d5ff", accent: "#a855f7", accent2: "#f472b6",
+    light: "#f3e8ff", text: "#1f2937", subtext: "#6b7280",
+    card: "white", tab: "#f3f4f6",
     button: "linear-gradient(135deg,#c084fc,#a855f7)",
+    tabIcons: ["📅","📊","🎯","🌸","📚","⚙️"],
+    emojiSet: null,
   },
   minimal: {
-    name: "Minimal", emoji: "🖤",
+    name: "Minimal", emoji: "◼", useEmoji: false,
     bg: "#ffffff",
     header: "#f9fafb",
-    border: "#e5e7eb",
-    accent: "#111827",
-    accent2: "#374151",
-    light: "#f3f4f6",
-    text: "#111827",
-    subtext: "#6b7280",
-    card: "white",
-    tab: "#f3f4f6",
+    border: "#e5e7eb", accent: "#111827", accent2: "#374151",
+    light: "#f3f4f6", text: "#111827", subtext: "#9ca3af",
+    card: "white", tab: "#f3f4f6",
     button: "linear-gradient(135deg,#374151,#111827)",
+    tabIcons: ["01","02","03","04","05","06"],
+    emojiSet: null,
   },
   latte: {
-    name: "Latte", emoji: "🤍",
+    name: "Latte", emoji: "◯", useEmoji: false,
     bg: "linear-gradient(135deg,#fdf8f0,#faf5eb,#fef9f0)",
     header: "linear-gradient(135deg,#f5ede0,#f0e6d3,#faf0e6)",
-    border: "#e8d5b7",
-    accent: "#92694a",
-    accent2: "#b8895a",
-    light: "#fdf0e0",
-    text: "#3d2b1f",
-    subtext: "#8b6f5e",
-    card: "#fffcf8",
-    tab: "#f5ede0",
+    border: "#e8d5b7", accent: "#92694a", accent2: "#b8895a",
+    light: "#fdf0e0", text: "#3d2b1f", subtext: "#8b6f5e",
+    card: "#fffcf8", tab: "#f5ede0",
     button: "linear-gradient(135deg,#b8895a,#92694a)",
+    tabIcons: ["01","02","03","04","05","06"],
+    emojiSet: null,
   },
   forest: {
-    name: "Forest", emoji: "🌿",
+    name: "Forest", emoji: "🌿", useEmoji: true,
     bg: "linear-gradient(135deg,#f0fdf4,#ecfdf5,#f0faf4)",
     header: "linear-gradient(135deg,#dcfce7,#d1fae5,#ecfdf5)",
-    border: "#a7f3d0",
-    accent: "#059669",
-    accent2: "#10b981",
-    light: "#d1fae5",
-    text: "#064e3b",
-    subtext: "#6b7280",
-    card: "white",
-    tab: "#ecfdf5",
+    border: "#a7f3d0", accent: "#059669", accent2: "#10b981",
+    light: "#d1fae5", text: "#064e3b", subtext: "#6b7280",
+    card: "white", tab: "#ecfdf5",
     button: "linear-gradient(135deg,#10b981,#059669)",
+    tabIcons: ["🌲","📊","🎋","🌱","🍃","⚙️"],
+    emojiSet: ["🌿","🌱","🌲","🌳","🍀","🍃","🌾","🪨","🍄","🌻","🌼","🌸","🌺","🪴","🎋","🎍","🫚","🪵","🌰","🐢","🐸","🦋","🐝","🌈","⛰️","🏔️","🌊","🏕️","🌄","🍎","🍊","🍋","🍇","🫐","🥦","🥕","🌽","🍓","🍒"],
+  },
+  ocean: {
+    name: "Ocean", emoji: "🌊", useEmoji: true,
+    bg: "linear-gradient(135deg,#eff6ff,#f0fdf4,#faf5ff)",
+    header: "linear-gradient(135deg,#dbeafe,#d1fae5,#ede9fe)",
+    border: "#93c5fd", accent: "#2563eb", accent2: "#7c3aed",
+    light: "#dbeafe", text: "#1e3a5f", subtext: "#4b6cb7",
+    card: "white", tab: "#eff6ff",
+    button: "linear-gradient(135deg,#6d28d9,#2563eb)",
+    tabIcons: ["🌊","📊","🎯","🐚","📚","⚙️"],
+    emojiSet: ["🌊","🐚","🐋","🐬","🐠","🐡","🦀","🦞","🦑","🐙","🦈","🐳","🐟","🦭","🌴","🏖️","⛵","🚢","🪸","🌺","💎","🫧","🔵","🟣","🐌","🦋","🪼","🐊","🌙","⭐","🐚","🫐","🍇","💜","💙","🩵","🩶"],
   },
 };
+
+function getThemeEmoji(defaultEmoji, T) {
+  if (T.useEmoji) return defaultEmoji;
+  return "•";
+}
 
 const SECTION_COLORS = ["#a855f7","#f472b6","#34d399","#60a5fa","#fb923c","#f59e0b","#6ee7b7","#818cf8","#fda4af","#67e8f9"];
 
@@ -814,7 +818,7 @@ export default function AllbugsLife() {
               {label:"Friends",value:Object.keys(friends).length,emoji:"🌸"},
             ].map(({label,value,emoji})=>(
               <div key={label} style={{flex:1,background:"white",borderRadius:10,padding:"6px 4px",textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
-                <div style={{fontSize:13}}>{emoji}</div>
+                <div style={{fontSize:13}}>{T.useEmoji?emoji:""}</div>
                 <div style={{fontSize:13,fontWeight:700,color:T.accent}}>{value}</div>
                 <div style={{fontSize:9,color:"#9ca3af"}}>{label}</div>
               </div>
@@ -826,7 +830,7 @@ export default function AllbugsLife() {
       {/* Tabs */}
       <div style={{maxWidth:520,margin:"12px auto 0",padding:"0 16px"}}>
         <div style={{display:"flex",background:T.tab,borderRadius:10,padding:3,gap:2}}>
-          {[["grid","📅"],["stats","📊"],["goals","🎯"],["friends","🌸"],["library","📚"],["manage","⚙️"]].map(([k,label])=>(
+          {[["grid",T.tabIcons[0]],["stats",T.tabIcons[1]],["goals",T.tabIcons[2]],["friends",T.tabIcons[3]],["library",T.tabIcons[4]],["manage",T.tabIcons[5]]].map(([k,label])=>(
             <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"7px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:15,background:view===k?T.card:"transparent",boxShadow:view===k?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.2s",color:view===k?T.accent:T.subtext}}>{label}</button>
           ))}
         </div>
@@ -921,7 +925,7 @@ export default function AllbugsLife() {
                   return(<div key={sec.key} style={{marginBottom:10}}>
                     <p style={{margin:"0 0 6px",fontSize:10,fontWeight:700,color:sec.accent,letterSpacing:1,textTransform:"uppercase"}}>{sec.label}</p>
                     <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                      {sh.map(h=>{const done=data[dateKey(selectedDay)]?.[h.id];return(<button key={h.id} onClick={()=>toggle(selectedDay,h.id)} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:20,border:`1.5px solid ${done?h.color:"#e5e7eb"}`,background:done?h.color+"22":"#f9fafb",cursor:"pointer"}}><span style={{fontSize:11}}>{h.emoji}</span><span style={{fontSize:11,color:done?h.color:"#6b7280",fontWeight:done?600:400}}>{h.label}</span>{done&&<span style={{fontSize:9,color:h.color}}>✓</span>}</button>);})}
+                      {sh.map(h=>{const done=data[dateKey(selectedDay)]?.[h.id];return(<button key={h.id} onClick={()=>toggle(selectedDay,h.id)} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:20,border:`1.5px solid ${done?h.color:"#e5e7eb"}`,background:done?h.color+"22":"#f9fafb",cursor:"pointer"}}><span style={{fontSize:11}}>{T.useEmoji?h.emoji:"•"}</span><span style={{fontSize:11,color:done?h.color:T.subtext,fontWeight:done?600:400}}>{h.label}</span>{done&&<span style={{fontSize:9,color:h.color}}>✓</span>}</button>);})}
                     </div>
                   </div>);
                 })}
@@ -1114,12 +1118,12 @@ export default function AllbugsLife() {
                   <button onClick={()=>setAddingToSection(isAdding?null:sec.key)} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${sec.accent}`,background:isAdding?sec.accent:"white",color:isAdding?"white":sec.accent,fontSize:11,fontWeight:600,cursor:"pointer"}}>{isAdding?"Cancel":"+ Add"}</button>
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:isAdding?12:0}}>
-                  {sh.map(h=>(<div key={h.id} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:20,background:h.color+"18",border:`1.5px solid ${h.color+"44"}`}}><span style={{fontSize:11}}>{h.emoji}</span><span style={{fontSize:11,color:"#374151"}}>{h.label}</span><button onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:11,padding:"0 0 0 2px"}}>✕</button></div>))}
+                  {sh.map(h=>(<div key={h.id} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:20,background:h.color+"18",border:`1.5px solid ${h.color+"44"}`}}><span style={{fontSize:11}}>{T.useEmoji?h.emoji:"•"}</span><span style={{fontSize:11,color:T.text}}>{h.label}</span><button onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))} style={{background:"none",border:"none",color:T.subtext,cursor:"pointer",fontSize:11,padding:"0 0 0 2px"}}>✕</button></div>))}
                 </div>
                 {isAdding&&(
                   <div style={{borderTop:`1px solid ${sec.accent}22`,paddingTop:12}}>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                      {EMOJI_OPTIONS.map(e=><button key={e} onClick={()=>setNewHabitEmoji(e)} style={{width:30,height:30,borderRadius:8,border:`2px solid ${newHabitEmoji===e?sec.accent:"transparent"}`,background:newHabitEmoji===e?sec.accent+"22":"white",cursor:"pointer",fontSize:14}}>{e}</button>)}
+                      {(T.emojiSet||EMOJI_OPTIONS).map(e=><button key={e} onClick={()=>setNewHabitEmoji(e)} style={{width:30,height:30,borderRadius:8,border:`2px solid ${newHabitEmoji===e?sec.accent:"transparent"}`,background:newHabitEmoji===e?sec.accent+"22":T.card,cursor:"pointer",fontSize:14}}>{e}</button>)}
                     </div>
                     <div style={{display:"flex",gap:8}}>
                       <input value={newHabitLabel} onChange={e=>setNewHabitLabel(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addHabit(sec.key)} placeholder="Habit name..." style={{flex:1,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${sec.accent}44`,fontSize:13,fontFamily:"Georgia,serif",outline:"none",color:"#374151"}}/>
