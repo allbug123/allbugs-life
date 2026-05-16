@@ -24,7 +24,8 @@ const S = {
       localStorage.setItem(k, JSON.stringify(v));
       const uid = userId || window.__userId || localStorage.getItem("userId");
       if (!uid) return;
-      await supabase.from("user_data").upsert({ user_id: uid, key: k, value: JSON.stringify(v), updated_at: new Date().toISOString() }, { onConflict: "user_id,key" });
+      const id = uid + "_" + k;
+      await supabase.from("user_data").upsert({ id, user_id: uid, key: k, value: JSON.stringify(v), updated_at: new Date().toISOString() }, { onConflict: "id" });
     } catch { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
   },
 };
