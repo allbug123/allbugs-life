@@ -106,9 +106,6 @@ const MOCK_USERS = {
   luna_girl: { username:"luna_girl", displayName:"Luna 🌙", avatar:"🌙", bio:"manifesting & moving my body daily",
     habits:DEFAULT_HABITS.slice(0,8), data:{},
     journal:{[todayKey()]:{gratitude:"Grateful for sunshine and my morning walk 🌞",photo:null}} },
-  river_rae: { username:"river_rae", displayName:"Rae 🌿", avatar:"🌿", bio:"big river girl energy always",
-    habits:DEFAULT_HABITS, data:{},
-    journal:{[todayKey()]:{gratitude:"The river trail today was everything 🌊",photo:null}} },
 };
 
 function todayKey() {
@@ -342,6 +339,8 @@ export default function AllbugsLife() {
   const [myUsername,setMyUsername] = useState("");
   const [myDisplay,setMyDisplay] = useState("");
   const [myAvatar,setMyAvatar] = useState("🐛");
+  const [myPin,setMyPin] = useState("");
+  const [pinError,setPinError] = useState("");
 
   const [year,setYear] = useState(now.getFullYear());
   const [month,setMonth] = useState(now.getMonth());
@@ -350,7 +349,8 @@ export default function AllbugsLife() {
   const [selectedDay,setSelectedDay] = useState(null);
   const [view,setView] = useState("grid");
   const [filterSection,setFilterSection] = useState("all");
-  const [cycleDay,setCycleDay] = useState(4);
+  const [cycleStartDate,setCycleStartDate] = useState(null);
+  const [showCycleSetup,setShowCycleSetup] = useState(false);
 
   const [journal,setJournal] = useState({});
   const [journalDay,setJournalDay] = useState(null);
@@ -361,7 +361,7 @@ export default function AllbugsLife() {
   const [goals,setGoals] = useState({});
   const [newGoalText,setNewGoalText] = useState("");
 
-  const [friends,setFriends] = useState({luna_girl:"friend",river_rae:"bestie"});
+  const [friends,setFriends] = useState({luna_girl:"friend"});
   const [reactions,setReactions] = useState({});
   const [inviteUsername,setInviteUsername] = useState("");
   const [inviteMsg,setInviteMsg] = useState("");
@@ -383,6 +383,7 @@ export default function AllbugsLife() {
   useEffect(()=>{
     (async()=>{
       const savedUserId = localStorage.getItem("userId");
+      const savedPin = localStorage.getItem("userPin");
       const profile = await S.get("profile", savedUserId);
       if (profile){setMyUsername(profile.username||"");setMyDisplay(profile.display||"");setMyAvatar(profile.avatar||"🐛");setScreen("app");}
       const d=await S.get("habitData",savedUserId); if(d)setData(d);
@@ -394,7 +395,7 @@ export default function AllbugsLife() {
       const mp=await S.get("myPost",savedUserId); if(mp)setMyPost(mp);
       const fl=await S.get("folders",savedUserId); if(fl)setFolders(fl);
       const en=await S.get("entries",savedUserId); if(en)setEntries(en);
-      const cd=await S.get("cycleDay",savedUserId); if(cd)setCycleDay(cd);
+      const cd=await S.get("cycleStartDate",savedUserId); if(cd)setCycleStartDate(cd);
       setLoaded(true);
       if (savedUserId) window.__userId = savedUserId;
     })();
@@ -409,16 +410,24 @@ export default function AllbugsLife() {
   useEffect(()=>{if(loaded)S.set("myPost",myPost,window.__userId);},[myPost,loaded]);
   useEffect(()=>{if(loaded)S.set("folders",folders,window.__userId);},[folders,loaded]);
   useEffect(()=>{if(loaded)S.set("entries",entries,window.__userId);},[entries,loaded]);
-  useEffect(()=>{if(loaded)S.set("cycleDay",cycleDay,window.__userId);},[cycleDay,loaded]);
+  useEffect(()=>{if(loaded)S.set("cycleStartDate",cycleStartDate,window.__userId);},[cycleStartDate,loaded]);
 
   const saveProfile = async () => {
-    if(!myUsername||!myDisplay)return;
+    if(!myUsername||!myDisplay||myPin.length<4)return;
     const userId = myUsername;
     try {
-      await supabase.from("profiles").upsert({ id: userId, username: myUsername, display_name: myDisplay, avatar: myAvatar }, { onConflict: "id" });
+      // Check if username exists with different PIN
+      const { data: existing } = await supabase.from("profiles").select("id,pin").eq("username", myUsername).single();
+      if (existing && existing.pin && existing.pin !== myPin) {
+        setPinError("Incorrect PIN for this username");
+        return;
+      }
+      await supabase.from("profiles").upsert({ id: userId, username: myUsername, display_name: myDisplay, avatar: myAvatar, pin: myPin }, { onConflict: "id" });
     } catch {}
     localStorage.setItem("userId", userId);
-    S.set("profile",{username:myUsername,display:myDisplay,avatar:myAvatar}, userId);
+    localStorage.setItem("userPin", myPin);
+    S.set("profile",{username:myUsername,display:myDisplay,avatar:myAvatar,pin:myPin}, userId);
+    window.__userId = userId;
     setScreen("app");
   };
 
@@ -448,9 +457,26 @@ export default function AllbugsLife() {
   const handlePostPhoto=(e)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=(ev)=>setPostPhoto(ev.target.result);r.readAsDataURL(f);};
 
   const addHabit=(section)=>{if(!newHabitLabel.trim())return;const color=SECTION_COLORS[Math.floor(Math.random()*SECTION_COLORS.length)];setHabits(p=>[...p,{id:`custom_${Date.now()}`,label:newHabitLabel.trim(),emoji:newHabitEmoji,color,section}]);setNewHabitLabel("");setNewHabitEmoji("⭐");setAddingToSection(null);};
+  const logout = () => {
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userPin");
+    window.__userId = null;
+    setScreen("setup");
+    setMyUsername(""); setMyDisplay(""); setMyAvatar("🐛"); setMyPin("");
+    setData({}); setHabits(DEFAULT_HABITS); setJournal({}); setGoals({});
+    setFriends({luna_girl:"friend"}); setReactions({}); setCycleStartDate(null);
+  };
   const prevMonth=()=>{if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1);setSelectedDay(null);};
   const nextMonth=()=>{if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1);setSelectedDay(null);};
   const filteredHabits=filterSection==="all"?habits:habits.filter(h=>h.section===filterSection);
+  // Compute current cycle day from start date
+  const cycleDay = (() => {
+    if (!cycleStartDate) return 1;
+    const start = new Date(cycleStartDate);
+    const today = new Date();
+    const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+    return ((diff % 20) + 20) % 20 + 1;
+  })();
   const ph=getPhase(cycleDay);
 
   if (screen==="setup") return (
@@ -474,8 +500,15 @@ export default function AllbugsLife() {
             <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Username</label>
             <input value={myUsername} onChange={e=>setMyUsername(e.target.value.toLowerCase().replace(/\s/g,""))} placeholder="e.g. allbug" style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151"}}/>
           </div>
-          <button onClick={saveProfile} disabled={!myUsername||!myDisplay}
-            style={{width:"100%",padding:13,borderRadius:12,border:"none",background:myUsername&&myDisplay?"linear-gradient(135deg,#c084fc,#a855f7)":"#e5e7eb",color:"white",fontSize:15,fontWeight:700,cursor:myUsername&&myDisplay?"pointer":"not-allowed",fontFamily:"Georgia,serif"}}>
+          <div style={{marginBottom:16}}>
+            <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>PIN (4-6 digits)</label>
+            <input value={myPin} onChange={e=>{ setPinError(""); setMyPin(e.target.value.replace(/\D/g,"").slice(0,6)); }} placeholder="e.g. 1234" type="password" inputMode="numeric"
+              style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${pinError?"#f43f5e":"#e9d5ff"}`,fontSize:18,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151",letterSpacing:4,textAlign:"center"}}/>
+            {pinError&&<p style={{margin:"4px 0 0",fontSize:11,color:"#f43f5e"}}>{pinError}</p>}
+            <p style={{margin:"4px 0 0",fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>Use this PIN to log in on any device 🌿</p>
+          </div>
+          <button onClick={saveProfile} disabled={!myUsername||!myDisplay||myPin.length<4}
+            style={{width:"100%",padding:13,borderRadius:12,border:"none",background:myUsername&&myDisplay&&myPin.length>=4?"linear-gradient(135deg,#c084fc,#a855f7)":"#e5e7eb",color:"white",fontSize:15,fontWeight:700,cursor:myUsername&&myDisplay&&myPin.length>=4?"pointer":"not-allowed",fontFamily:"Georgia,serif"}}>
             Enter my life 🐛
           </button>
         </div>
@@ -486,6 +519,23 @@ export default function AllbugsLife() {
   return (
     <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"linear-gradient(135deg,#fdf4ff 0%,#f0fdf4 50%,#fff1f2 100%)"}}>
 
+      {/* Cycle setup modal */}
+      {showCycleSetup&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowCycleSetup(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:380,background:"white",borderRadius:16,padding:24,boxShadow:"0 8px 32px rgba(168,85,247,0.2)"}}>
+            <h3 style={{margin:"0 0 6px",fontSize:16,fontWeight:700,color:"#1f2937"}}>🌙 When did your last period start?</h3>
+            <p style={{margin:"0 0 16px",fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>Pick the first day of your most recent period and the app will track your phase automatically 🌿</p>
+            <input type="date" value={cycleStartDate||""} onChange={e=>{setCycleStartDate(e.target.value);}}
+              style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:14,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151",marginBottom:16}}/>
+            <div style={{background:"#f3e8ff",borderRadius:10,padding:"10px 12px",marginBottom:16}}>
+              <p style={{margin:0,fontSize:12,color:"#a855f7",fontWeight:600}}>
+                {cycleStartDate ? `Currently Day ${cycleDay} — ${ph.name} Phase ${ph.emoji}` : "Pick a date to see your phase"}
+              </p>
+            </div>
+            <button onClick={()=>setShowCycleSetup(false)} style={{width:"100%",padding:12,borderRadius:12,border:"none",background:"linear-gradient(135deg,#c084fc,#a855f7)",color:"white",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>Save ✨</button>
+          </div>
+        </div>
+      )}
       {/* Journal modal */}
       {journalDay!==null&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setJournalDay(null)}>
@@ -563,9 +613,12 @@ export default function AllbugsLife() {
                 <h1 style={{fontSize:20,fontWeight:700,color:"#1f2937",margin:"1px 0 0"}}>Allbug's Life 🐛</h1>
               </div>
             </div>
-            <button onClick={()=>openJournal(today)} style={{padding:"7px 12px",borderRadius:20,border:"1.5px solid #e9d5ff",background:journal[tk]?.gratitude||journal[tk]?.photo?"#f3e8ff":"white",color:"#a855f7",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-              {journal[tk]?.gratitude||journal[tk]?.photo?"📸 Today ✓":"📸 Today"}
-            </button>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>openJournal(today)} style={{padding:"7px 12px",borderRadius:20,border:"1.5px solid #e9d5ff",background:journal[tk]?.gratitude||journal[tk]?.photo?"#f3e8ff":"white",color:"#a855f7",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                {journal[tk]?.gratitude||journal[tk]?.photo?"📸 ✓":"📸"}
+              </button>
+              <button onClick={logout} style={{padding:"7px 10px",borderRadius:20,border:"1.5px solid #fecdd3",background:"white",color:"#f43f5e",fontSize:11,fontWeight:700,cursor:"pointer"}}>↩️</button>
+            </div>
           </div>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10}}>
             <p style={{fontSize:14,fontWeight:600,color:"#6b7280",margin:0}}>{MONTH_NAMES[month]} {year}</p>
@@ -615,11 +668,10 @@ export default function AllbugsLife() {
                     <p style={{margin:0,fontSize:11,color:ph.accent,fontStyle:"italic"}}>{ph.label}</p>
                   </div>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <button onClick={()=>setCycleDay(d=>Math.max(1,d-1))} style={{width:26,height:26,borderRadius:"50%",border:`1.5px solid ${ph.accent}44`,background:"white",color:ph.accent,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>-</button>
-                  <span style={{fontSize:13,fontWeight:700,color:ph.accent,minWidth:20,textAlign:"center"}}>{cycleDay}</span>
-                  <button onClick={()=>setCycleDay(d=>Math.min(20,d+1))} style={{width:26,height:26,borderRadius:"50%",border:`1.5px solid ${ph.accent}44`,background:"white",color:ph.accent,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                </div>
+                <button onClick={()=>setShowCycleSetup(true)}
+                  style={{padding:"5px 10px",borderRadius:20,border:`1.5px solid ${ph.accent}44`,background:"white",color:ph.accent,cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  📅 Day {cycleDay}
+                </button>
               </div>
               <p style={{margin:"0 0 10px",fontSize:12,color:"#374151",lineHeight:1.6}}>{ph.desc}</p>
               <div style={{display:"flex",gap:8,marginBottom:10}}>
@@ -773,7 +825,10 @@ export default function AllbugsLife() {
               <p style={{margin:"8px 0 0",fontSize:10,color:"#d1d5db",fontStyle:"italic"}}>Try: luna_girl · river_rae</p>
             </div>
             {Object.entries(friends).map(([username,tier])=>{
-              const friend=MOCK_USERS[username];if(!friend)return null;
+              const realFriendCount = Object.keys(friends).filter(u=>u!=="luna_girl").length;
+              const friend=MOCK_USERS[username];
+              if(!friend)return null;
+              if(username==="luna_girl"&&realFriendCount>0)return null;
               const score=pct((friend.habits||[]).filter(h=>friend.data?.[tk]?.[h.id]).length,(friend.habits||[]).length);
               return(
                 <div key={username} style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(168,85,247,0.1)",border:"1.5px solid #f3e8ff",marginBottom:12}}>
