@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   "https://secddtuuggxjkfoboxby.supabase.co",
@@ -438,14 +438,14 @@ export default function AllbugsLife() {
     if(!myUsername||!myDisplay||myPin.length<4)return;
     const userId = myUsername;
     try {
-      // Check if username exists with different PIN
-      const { data: existing } = await supabase.from("profiles").select("id,pin").eq("username", myUsername).single();
-      if (existing && existing.pin && existing.pin !== myPin) {
-        setPinError("Incorrect PIN for this username");
+      // Check if username already exists
+      const { data: existing } = await supabase.from("profiles").select("id,pin").eq("username", myUsername).maybeSingle();
+      if (existing) {
+        setPinError("Username already taken — try logging in instead");
         return;
       }
-      await supabase.from("profiles").upsert({ id: userId, username: myUsername, display_name: myDisplay, avatar: myAvatar, pin: myPin }, { onConflict: "id" });
-    } catch {}
+      await supabase.from("profiles").insert({ id: userId, username: myUsername, display_name: myDisplay, avatar: myAvatar, pin: myPin });
+    } catch(e) { setPinError("Something went wrong, try again"); return; }
     localStorage.setItem("userId", myUsername);
     localStorage.setItem("userPin", myPin);
     window.__userId = myUsername;
