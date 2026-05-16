@@ -384,8 +384,9 @@ export default function AllbugsLife() {
     (async()=>{
       const savedUserId = localStorage.getItem("userId");
       const savedPin = localStorage.getItem("userPin");
+      if (savedUserId) window.__userId = savedUserId;
       const profile = await S.get("profile", savedUserId);
-      if (profile){setMyUsername(profile.username||"");setMyDisplay(profile.display||"");setMyAvatar(profile.avatar||"🐛");setScreen("app");}
+      if (profile){setMyUsername(profile.username||"");setMyDisplay(profile.display||"");setMyAvatar(profile.avatar||"🐛");setMyPin(savedPin||"");setScreen("app");}
       const d=await S.get("habitData",savedUserId); if(d)setData(d);
       const h=await S.get("habits",savedUserId); if(h)setHabits(h);
       const j=await S.get("journal",savedUserId); if(j)setJournal(j);
@@ -410,7 +411,7 @@ export default function AllbugsLife() {
   useEffect(()=>{if(loaded)S.set("myPost",myPost,window.__userId);},[myPost,loaded]);
   useEffect(()=>{if(loaded)S.set("folders",folders,window.__userId);},[folders,loaded]);
   useEffect(()=>{if(loaded)S.set("entries",entries,window.__userId);},[entries,loaded]);
-  useEffect(()=>{if(loaded)S.set("cycleStartDate",cycleStartDate,window.__userId);},[cycleStartDate,loaded]);
+  useEffect(()=>{if(loaded&&cycleStartDate)S.set("cycleStartDate",cycleStartDate,window.__userId);},[cycleStartDate,loaded]);
 
   const saveProfile = async () => {
     if(!myUsername||!myDisplay||myPin.length<4)return;
