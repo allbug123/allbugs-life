@@ -1,8 +1,26 @@
 import { useState, useRef, useEffect } from "react";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const supabase = createClient(
+  "https://secddtuuggxjkfoboxby.supabase.co",
+  "sb_publishable_naTvm_CTKEcUZEx5m1D4ww_gif5q5tv"
+);
 
 const S = {
-  get: async (k) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch { return null; } },
-  set: async (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  get: async (k, userId) => {
+    try {
+      if (!userId) { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; }
+      const { data } = await supabase.from("user_data").select("value").eq("user_id", userId).eq("key", k).single();
+      return data ? JSON.parse(data.value) : null;
+    } catch { return null; }
+  },
+  set: async (k, v, userId) => {
+    try {
+      localStorage.setItem(k, JSON.stringify(v));
+      if (!userId) return;
+      await supabase.from("user_data").upsert({ user_id: userId, key: k, value: JSON.stringify(v), updated_at: new Date().toISOString() }, { onConflict: "user_id,key" });
+    } catch {}
+  },
 };
 
 const PHASES = [
@@ -364,34 +382,45 @@ export default function AllbugsLife() {
 
   useEffect(()=>{
     (async()=>{
-      const profile = await S.get("profile");
+      const savedUserId = localStorage.getItem("userId");
+      const profile = await S.get("profile", savedUserId);
       if (profile){setMyUsername(profile.username||"");setMyDisplay(profile.display||"");setMyAvatar(profile.avatar||"🐛");setScreen("app");}
-      const d=await S.get("habitData"); if(d)setData(d);
-      const h=await S.get("habits"); if(h)setHabits(h);
-      const j=await S.get("journal"); if(j)setJournal(j);
-      const g=await S.get("goals"); if(g)setGoals(g);
-      const r=await S.get("reactions"); if(r)setReactions(r);
-      const fr=await S.get("friends"); if(fr)setFriends(fr);
-      const mp=await S.get("myPost"); if(mp)setMyPost(mp);
-      const fl=await S.get("folders"); if(fl)setFolders(fl);
-      const en=await S.get("entries"); if(en)setEntries(en);
-      const cd=await S.get("cycleDay"); if(cd)setCycleDay(cd);
+      const d=await S.get("habitData",savedUserId); if(d)setData(d);
+      const h=await S.get("habits",savedUserId); if(h)setHabits(h);
+      const j=await S.get("journal",savedUserId); if(j)setJournal(j);
+      const g=await S.get("goals",savedUserId); if(g)setGoals(g);
+      const r=await S.get("reactions",savedUserId); if(r)setReactions(r);
+      const fr=await S.get("friends",savedUserId); if(fr)setFriends(fr);
+      const mp=await S.get("myPost",savedUserId); if(mp)setMyPost(mp);
+      const fl=await S.get("folders",savedUserId); if(fl)setFolders(fl);
+      const en=await S.get("entries",savedUserId); if(en)setEntries(en);
+      const cd=await S.get("cycleDay",savedUserId); if(cd)setCycleDay(cd);
       setLoaded(true);
+      if (savedUserId) window.__userId = savedUserId;
     })();
   },[]);
 
-  useEffect(()=>{if(loaded)S.set("habitData",data);},[data,loaded]);
-  useEffect(()=>{if(loaded)S.set("habits",habits);},[habits,loaded]);
-  useEffect(()=>{if(loaded)S.set("journal",journal);},[journal,loaded]);
-  useEffect(()=>{if(loaded)S.set("goals",goals);},[goals,loaded]);
-  useEffect(()=>{if(loaded)S.set("reactions",reactions);},[reactions,loaded]);
-  useEffect(()=>{if(loaded)S.set("friends",friends);},[friends,loaded]);
-  useEffect(()=>{if(loaded)S.set("myPost",myPost);},[myPost,loaded]);
-  useEffect(()=>{if(loaded)S.set("folders",folders);},[folders,loaded]);
-  useEffect(()=>{if(loaded)S.set("entries",entries);},[entries,loaded]);
-  useEffect(()=>{if(loaded)S.set("cycleDay",cycleDay);},[cycleDay,loaded]);
+  useEffect(()=>{if(loaded)S.set("habitData",data,window.__userId);},[data,loaded]);
+  useEffect(()=>{if(loaded)S.set("habits",habits,window.__userId);},[habits,loaded]);
+  useEffect(()=>{if(loaded)S.set("journal",journal,window.__userId);},[journal,loaded]);
+  useEffect(()=>{if(loaded)S.set("goals",goals,window.__userId);},[goals,loaded]);
+  useEffect(()=>{if(loaded)S.set("reactions",reactions,window.__userId);},[reactions,loaded]);
+  useEffect(()=>{if(loaded)S.set("friends",friends,window.__userId);},[friends,loaded]);
+  useEffect(()=>{if(loaded)S.set("myPost",myPost,window.__userId);},[myPost,loaded]);
+  useEffect(()=>{if(loaded)S.set("folders",folders,window.__userId);},[folders,loaded]);
+  useEffect(()=>{if(loaded)S.set("entries",entries,window.__userId);},[entries,loaded]);
+  useEffect(()=>{if(loaded)S.set("cycleDay",cycleDay,window.__userId);},[cycleDay,loaded]);
 
-  const saveProfile = () => { if(!myUsername||!myDisplay)return; S.set("profile",{username:myUsername,display:myDisplay,avatar:myAvatar}); setScreen("app"); };
+  const saveProfile = async () => {
+    if(!myUsername||!myDisplay)return;
+    const userId = myUsername;
+    try {
+      await supabase.from("profiles").upsert({ id: userId, username: myUsername, display_name: myDisplay, avatar: myAvatar }, { onConflict: "id" });
+    } catch {}
+    localStorage.setItem("userId", userId);
+    S.set("profile",{username:myUsername,display:myDisplay,avatar:myAvatar}, userId);
+    setScreen("app");
+  };
 
   const days=getDaysInMonth(year,month);
   const today=now.getDate();
