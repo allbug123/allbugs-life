@@ -1187,14 +1187,7 @@ export default function AllbugsLife() {
                 <div style={{marginTop:4}}>
                   <label style={{fontSize:10,fontWeight:700,color:T.subtext,letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Due Date 🌟</label>
                   <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}
-                    style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid #fbb6ce`,fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:T.text,background:T.card}}/>
-                  {dueDate&&(()=>{
-                    const pg = getPregnancyInfo(dueDate);
-                    if (!pg) return null;
-                    return <p style={{margin:"6px 0 0",fontSize:11,color:"#be185d",fontWeight:600,fontStyle:"italic"}}>
-                      {pg.born ? `Baby is ${pg.daysSinceBirth} day${pg.daysSinceBirth!==1?"s":""} old 💕` : `${pg.trimester.emoji} Week ${pg.weeksAlong}+${pg.daysIntoWeek} — ${pg.daysUntilDue} days to go 🌸`}
-                    </p>;
-                  })()}
+                    style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #fbb6ce",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:T.text,background:T.card}}/>
                 </div>
               )}
             </div>
