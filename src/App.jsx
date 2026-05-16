@@ -54,7 +54,13 @@ const PHASES = [
     energy:"🔋🔋 Winding down — 2/4" },
 ];
 
-function getPhase(day) { return PHASES.find(p => day >= p.days[0] && day <= p.days[1]) || PHASES[3]; }
+function getPhase(day, len=20) {
+  const ratio = day / len;
+  if (ratio <= 0.15) return PHASES[0]; // menstrual
+  if (ratio <= 0.4)  return PHASES[1]; // follicular
+  if (ratio <= 0.55) return PHASES[2]; // ovulatory
+  return PHASES[3]; // luteal
+}
 
 const DEFAULT_HABITS = [
   { id:"medicine",      label:"Medicine",        emoji:"💊", color:"#a855f7", section:"morning" },
@@ -99,7 +105,7 @@ const DEFAULT_ENTRIES = [
 
 const REACTIONS = ["🧡","🌸","🌿","✨","💪","🐛","🌙","🎉"];
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const EMOJI_OPTIONS = ["⭐","🎯","💪","🧘","📚","🎨","💧","🏃","🛁","🌸","🍵","🎵","🧹","💻","🐾","🌙","🌿","✨","💊","📝","🪥","🍳","🥗","📧","📋","🧺","🥦","🍓"];
+const EMOJI_OPTIONS = ["⭐","🎯","💪","🧘","📚","🎨","💧","🏃","🛁","🌸","🍵","🎵","🧹","💻","🐾","🌙","🌿","✨","💊","📝","🪥","🍳","🥗","📧","📋","🧺","🥦","🍓","🐶","🐱","🦋","🌺","🌻","🌈","⚡","🔥","❄️","🎪","🏋️","🚴","🧗","🏊","🎭","🎬","🎤","🎸","🎹","🎺","🎻","🥁","🎲","♟️","🎯","🎳","⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🚀","🛸","🌍","🏔️","🏖️","🌊","🌋","🦁","🐘","🦒","🐬","🦅","🌴","🍎","🍊","🍋","🍇","🍉","🍕","🍜","🥑","🧁","🍩","☕","🧃","🥤","🫖","💐","🌷","🌹","🍀","🎋","🪴","💎","👑","🎀","🎁","🏆","🥇","🎖️","📸","📱","💡","🔑","🗝️","🧲","🔭","🧬","⚗️","🩺","💉","🩹","🧸","🪆","🎠","🎡","🎢"];
 const SECTION_COLORS = ["#a855f7","#f472b6","#34d399","#60a5fa","#fb923c","#f59e0b","#6ee7b7","#818cf8","#fda4af","#67e8f9"];
 
 const MOCK_USERS = {
@@ -350,7 +356,9 @@ export default function AllbugsLife() {
   const [view,setView] = useState("grid");
   const [filterSection,setFilterSection] = useState("all");
   const [cycleStartDate,setCycleStartDate] = useState(null);
+  const [cycleLength,setCycleLength] = useState(20);
   const [showCycleSetup,setShowCycleSetup] = useState(false);
+  const [isNewAccount,setIsNewAccount] = useState(true);
 
   const [journal,setJournal] = useState({});
   const [journalDay,setJournalDay] = useState(null);
@@ -397,6 +405,7 @@ export default function AllbugsLife() {
       const fl=await S.get("folders",savedUserId); if(fl)setFolders(fl);
       const en=await S.get("entries",savedUserId); if(en)setEntries(en);
       const cd=await S.get("cycleStartDate",savedUserId); if(cd)setCycleStartDate(cd);
+      const cl=await S.get("cycleLength",savedUserId); if(cl)setCycleLength(cl);
       setLoaded(true);
       if (savedUserId) window.__userId = savedUserId;
     })();
@@ -412,6 +421,7 @@ export default function AllbugsLife() {
   useEffect(()=>{if(loaded)S.set("folders",folders,window.__userId);},[folders,loaded]);
   useEffect(()=>{if(loaded)S.set("entries",entries,window.__userId);},[entries,loaded]);
   useEffect(()=>{if(loaded&&cycleStartDate)S.set("cycleStartDate",cycleStartDate,window.__userId);},[cycleStartDate,loaded]);
+  useEffect(()=>{if(loaded)S.set("cycleLength",cycleLength,window.__userId);},[cycleLength,loaded]);
 
   const saveProfile = async () => {
     if(!myUsername||!myDisplay||myPin.length<4)return;
@@ -427,8 +437,11 @@ export default function AllbugsLife() {
     } catch {}
     localStorage.setItem("userId", userId);
     localStorage.setItem("userPin", myPin);
-    S.set("profile",{username:myUsername,display:myDisplay,avatar:myAvatar,pin:myPin}, userId);
     window.__userId = userId;
+    S.set("profile",{username:myUsername,display:myDisplay,avatar:myAvatar,pin:myPin}, userId);
+    if (cycleStartDate) S.set("cycleStartDate", cycleStartDate, userId);
+    S.set("cycleLength", cycleLength, userId);
+    setLoaded(true);
     setScreen("app");
   };
 
@@ -465,7 +478,7 @@ export default function AllbugsLife() {
     setScreen("setup");
     setMyUsername(""); setMyDisplay(""); setMyAvatar("🐛"); setMyPin("");
     setData({}); setHabits(DEFAULT_HABITS); setJournal({}); setGoals({});
-    setFriends({luna_girl:"friend"}); setReactions({}); setCycleStartDate(null);
+    setFriends({luna_girl:"friend"}); setReactions({}); setCycleStartDate(null); setCycleLength(20); setIsNewAccount(true);
   };
   const prevMonth=()=>{if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1);setSelectedDay(null);};
   const nextMonth=()=>{if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1);setSelectedDay(null);};
@@ -479,46 +492,123 @@ export default function AllbugsLife() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     if (diff < 0) return 1;
-    return (diff % 20) + 1;
+    const len = cycleLength || 20;
+    return (diff % len) + 1;
   })();
-  const ph=getPhase(cycleDay);
+  const ph=getPhase(cycleDay, cycleLength||20);
+
+  // Login handler
+  const handleLogin = async () => {
+    if (!myUsername || !myPin) return;
+    setPinError("");
+    try {
+      const { data } = await supabase.from("profiles").select("*").eq("username", myUsername).single();
+      if (!data) { setPinError("Username not found"); return; }
+      if (data.pin !== myPin) { setPinError("Incorrect PIN"); return; }
+      setMyDisplay(data.display_name||""); setMyAvatar(data.avatar||"🐛");
+      localStorage.setItem("userId", myUsername);
+      localStorage.setItem("userPin", myPin);
+      window.__userId = myUsername;
+      const savedUserId = myUsername;
+      const d=await S.get("habitData",savedUserId); if(d)setData(d);
+      const h=await S.get("habits",savedUserId); if(h)setHabits(h);
+      const j=await S.get("journal",savedUserId); if(j)setJournal(j);
+      const g=await S.get("goals",savedUserId); if(g)setGoals(g);
+      const fr=await S.get("friends",savedUserId); if(fr)setFriends(fr);
+      const mp=await S.get("myPost",savedUserId); if(mp)setMyPost(mp);
+      const fl=await S.get("folders",savedUserId); if(fl)setFolders(fl);
+      const en=await S.get("entries",savedUserId); if(en)setEntries(en);
+      const cd=await S.get("cycleStartDate",savedUserId); if(cd)setCycleStartDate(cd);
+      const cl=await S.get("cycleLength",savedUserId); if(cl)setCycleLength(cl);
+      setLoaded(true);
+      setScreen("app");
+    } catch(e) { setPinError("Something went wrong, try again"); }
+  };
 
   if (screen==="setup") return (
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#fdf4ff,#f0fdf4,#fff1f2)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia,serif",padding:20}}>
-      <div style={{maxWidth:380,width:"100%"}}>
+      <div style={{maxWidth:420,width:"100%"}}>
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{fontSize:52,marginBottom:8}}>🐛</div>
           <h1 style={{fontSize:28,fontWeight:700,color:"#1f2937",margin:0}}>Allbug's Life</h1>
           <p style={{color:"#9ca3af",fontSize:13,margin:"6px 0 0",fontStyle:"italic"}}>your little wellness world 🌸</p>
         </div>
+
+        {/* Toggle */}
+        <div style={{display:"flex",background:"#f3f4f6",borderRadius:12,padding:4,gap:4,marginBottom:20}}>
+          <button onClick={()=>{setIsNewAccount(false);setPinError("");}} style={{flex:1,padding:"10px",borderRadius:10,border:"none",background:!isNewAccount?"white":"transparent",color:!isNewAccount?"#a855f7":"#6b7280",fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:!isNewAccount?"0 1px 4px rgba(0,0,0,0.1)":"none",fontFamily:"Georgia,serif"}}>Log In</button>
+          <button onClick={()=>{setIsNewAccount(true);setPinError("");}} style={{flex:1,padding:"10px",borderRadius:10,border:"none",background:isNewAccount?"white":"transparent",color:isNewAccount?"#a855f7":"#6b7280",fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:isNewAccount?"0 1px 4px rgba(0,0,0,0.1)":"none",fontFamily:"Georgia,serif"}}>Create Account</button>
+        </div>
+
         <div style={{background:"white",borderRadius:20,padding:24,boxShadow:"0 4px 24px rgba(168,85,247,0.12)",border:"1.5px solid #f3e8ff"}}>
-          <p style={{margin:"0 0 12px",fontSize:13,fontWeight:700,color:"#374151"}}>Choose your avatar</p>
-          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
-            {["🐛","🌸","🌿","🦋","🌙","🐾","🌊","🍓","✨","🌻"].map(e=><button key={e} onClick={()=>setMyAvatar(e)} style={{width:40,height:40,borderRadius:10,border:`2px solid ${myAvatar===e?"#a855f7":"#e5e7eb"}`,background:myAvatar===e?"#f3e8ff":"white",fontSize:20,cursor:"pointer"}}>{e}</button>)}
-          </div>
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Display Name</label>
-            <input value={myDisplay} onChange={e=>setMyDisplay(e.target.value)} placeholder="e.g. Allie 🌿" style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151"}}/>
-          </div>
-          <div style={{marginBottom:20}}>
-            <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Username</label>
-            <input value={myUsername} onChange={e=>setMyUsername(e.target.value.toLowerCase().replace(/\s/g,""))} placeholder="e.g. allbug" style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151"}}/>
-          </div>
-          <div style={{marginBottom:16}}>
-            <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>PIN (4-6 digits)</label>
-            <input value={myPin} onChange={e=>{ setPinError(""); setMyPin(e.target.value.replace(/\D/g,"").slice(0,6)); }} placeholder="e.g. 1234" type="password" inputMode="numeric"
-              style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${pinError?"#f43f5e":"#e9d5ff"}`,fontSize:18,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151",letterSpacing:4,textAlign:"center"}}/>
-            {pinError&&<p style={{margin:"4px 0 0",fontSize:11,color:"#f43f5e"}}>{pinError}</p>}
-            <p style={{margin:"4px 0 0",fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>Use this PIN to log in on any device 🌿</p>
-          </div>
-          <button onClick={saveProfile} disabled={!myUsername||!myDisplay||myPin.length<4}
-            style={{width:"100%",padding:13,borderRadius:12,border:"none",background:myUsername&&myDisplay&&myPin.length>=4?"linear-gradient(135deg,#c084fc,#a855f7)":"#e5e7eb",color:"white",fontSize:15,fontWeight:700,cursor:myUsername&&myDisplay&&myPin.length>=4?"pointer":"not-allowed",fontFamily:"Georgia,serif"}}>
-            Enter my life 🐛
-          </button>
+          {isNewAccount ? (
+            <>
+              <p style={{margin:"0 0 12px",fontSize:13,fontWeight:700,color:"#374151"}}>Choose your avatar</p>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
+                {["🐛","🌸","🌿","🦋","🌙","🐾","🌊","🍓","✨","🌻"].map(e=><button key={e} onClick={()=>setMyAvatar(e)} style={{width:40,height:40,borderRadius:10,border:`2px solid ${myAvatar===e?"#a855f7":"#e5e7eb"}`,background:myAvatar===e?"#f3e8ff":"white",fontSize:20,cursor:"pointer"}}>{e}</button>)}
+              </div>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Display Name</label>
+                <input value={myDisplay} onChange={e=>setMyDisplay(e.target.value)} placeholder="e.g. Allie 🌿" style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151"}}/>
+              </div>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Username</label>
+                <input value={myUsername} onChange={e=>setMyUsername(e.target.value.toLowerCase().replace(/\s/g,""))} placeholder="e.g. allbug" style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151"}}/>
+              </div>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>PIN (4-6 digits)</label>
+                <input value={myPin} onChange={e=>{setPinError("");setMyPin(e.target.value.replace(/[^0-9]/g,"").slice(0,6));}} placeholder="e.g. 1234" type="password" inputMode="numeric"
+                  style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${pinError?"#f43f5e":"#e9d5ff"}`,fontSize:18,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151",letterSpacing:4,textAlign:"center"}}/>
+                <p style={{margin:"4px 0 0",fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>Use this PIN to log in on any device 🌿</p>
+              </div>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Last period start date</label>
+                <input type="date" value={cycleStartDate||""} onChange={e=>setCycleStartDate(e.target.value)}
+                  style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151"}}/>
+              </div>
+              <div style={{marginBottom:20}}>
+                <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Cycle length (days)</label>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {[20,21,24,28,30,32,35].map(n=>(
+                    <button key={n} onClick={()=>setCycleLength(n)}
+                      style={{padding:"6px 14px",borderRadius:20,border:`1.5px solid ${cycleLength===n?"#a855f7":"#e5e7eb"}`,background:cycleLength===n?"#f3e8ff":"white",color:cycleLength===n?"#a855f7":"#6b7280",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <p style={{margin:"4px 0 0",fontSize:10,color:"#9ca3af",fontStyle:"italic"}}>Your cycle is {cycleLength} days 🌿</p>
+              </div>
+              {pinError&&<p style={{margin:"0 0 10px",fontSize:12,color:"#f43f5e",textAlign:"center"}}>{pinError}</p>}
+              <button onClick={saveProfile} disabled={!myUsername||!myDisplay||myPin.length<4}
+                style={{width:"100%",padding:13,borderRadius:12,border:"none",background:myUsername&&myDisplay&&myPin.length>=4?"linear-gradient(135deg,#c084fc,#a855f7)":"#e5e7eb",color:"white",fontSize:15,fontWeight:700,cursor:myUsername&&myDisplay&&myPin.length>=4?"pointer":"not-allowed",fontFamily:"Georgia,serif"}}>
+                Enter my life 🐛
+              </button>
+            </>
+          ) : (
+            <>
+              <p style={{margin:"0 0 20px",fontSize:13,color:"#6b7280",textAlign:"center",fontStyle:"italic"}}>Welcome back! 🌸</p>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Username</label>
+                <input value={myUsername} onChange={e=>{setPinError("");setMyUsername(e.target.value.toLowerCase().replace(/\s/g,""));}} placeholder="e.g. allbug"
+                  style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151"}}/>
+              </div>
+              <div style={{marginBottom:20}}>
+                <label style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>PIN</label>
+                <input value={myPin} onChange={e=>{setPinError("");setMyPin(e.target.value.replace(/[^0-9]/g,"").slice(0,6));}} placeholder="••••" type="password" inputMode="numeric"
+                  style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${pinError?"#f43f5e":"#e9d5ff"}`,fontSize:18,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:"#374151",letterSpacing:6,textAlign:"center"}}/>
+              </div>
+              {pinError&&<p style={{margin:"0 0 10px",fontSize:12,color:"#f43f5e",textAlign:"center"}}>{pinError}</p>}
+              <button onClick={handleLogin} disabled={!myUsername||myPin.length<4}
+                style={{width:"100%",padding:13,borderRadius:12,border:"none",background:myUsername&&myPin.length>=4?"linear-gradient(135deg,#c084fc,#a855f7)":"#e5e7eb",color:"white",fontSize:15,fontWeight:700,cursor:myUsername&&myPin.length>=4?"pointer":"not-allowed",fontFamily:"Georgia,serif"}}>
+                Log in 🌿
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
+
 
   return (
     <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"linear-gradient(135deg,#fdf4ff 0%,#f0fdf4 50%,#fff1f2 100%)"}}>
