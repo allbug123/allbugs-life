@@ -878,7 +878,7 @@ export default function AllbugsLife() {
       <div style={{maxWidth:520,margin:"12px auto 0",padding:"0 16px"}}>
         <div style={{display:"flex",background:T.tab,borderRadius:10,padding:3,gap:2}}>
           {[["grid",T.tabIcons[0]],["stats",T.tabIcons[1]],["goals",T.tabIcons[2]],["friends",T.tabIcons[3]],["library",T.tabIcons[4]],["manage",T.tabIcons[5]]].map(([k,label])=>(
-            <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"7px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:15,background:view===k?T.card:"transparent",boxShadow:view===k?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.2s",color:view===k?T.accent:T.subtext}}>{label}</button>
+            <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"7px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:T.useEmoji?15:11,fontWeight:T.useEmoji?400:700,fontFamily:"Georgia,serif",background:view===k?T.card:"transparent",boxShadow:view===k?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.2s",color:view===k?T.accent:T.subtext}}>{label}</button>
           ))}
         </div>
       </div>
@@ -889,24 +889,18 @@ export default function AllbugsLife() {
         {view==="grid"&&(
           <div>
             {/* Phase card or Pregnancy card */}
-            {pregnancyMode&&dueDate ? (()=>{
-              const pg = getPregnancyInfo(dueDate);
-              if (!pg) return null;
-              const tri = pg.trimester;
-              if (pg.born) return (
-                <div style={{background:"#fff0f6",borderRadius:14,padding:14,marginBottom:14,border:"1.5px solid #fbb6ce"}}>
-                  <div style={{textAlign:"center",marginBottom:10}}>
-                    <div style={{fontSize:36,marginBottom:4}}>🍼</div>
-                    <p style={{margin:0,fontSize:18,fontWeight:700,color:"#be185d"}}>Baby is here! 💕</p>
-                    <p style={{margin:"4px 0 0",fontSize:13,color:"#9d174d"}}>{pg.daysSinceBirth} day{pg.daysSinceBirth!==1?"s":""} old 🌸</p>
-                  </div>
-                  <div style={{background:"white",borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
-                    <p style={{margin:0,fontSize:12,color:"#be185d",fontStyle:"italic"}}>You did it mama 🌟 Rest, recover, and soak in every moment 💛</p>
-                  </div>
-                </div>
-              );
+            {pregnancyMode&&dueDate&&getPregnancyInfo(dueDate)&&getPregnancyInfo(dueDate).born&&(
+              <div style={{background:"#fff0f6",borderRadius:14,padding:14,marginBottom:14,border:"1.5px solid #fbb6ce",textAlign:"center"}}>
+                <div style={{fontSize:36,marginBottom:4}}>🍼</div>
+                <p style={{margin:0,fontSize:18,fontWeight:700,color:"#be185d"}}>Baby is here! 💕</p>
+                <p style={{margin:"4px 0 8px",fontSize:13,color:"#9d174d"}}>{getPregnancyInfo(dueDate).daysSinceBirth} days old 🌸</p>
+                <p style={{margin:0,fontSize:12,color:"#be185d",fontStyle:"italic"}}>You did it mama 🌟 Rest and soak in every moment 💛</p>
+              </div>
+            )}
+            {pregnancyMode&&dueDate&&getPregnancyInfo(dueDate)&&!getPregnancyInfo(dueDate).born&&(()=>{
+              const pg=getPregnancyInfo(dueDate); const tri=pg.trimester;
               return (
-                <div style={{background:tri.color,borderRadius:14,padding:14,marginBottom:14,border:`1.5px solid ${tri.accent}33`}}>
+                <div style={{background:tri.color,borderRadius:14,padding:14,marginBottom:14,border:"1.5px solid #fbb6ce"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <span style={{fontSize:28}}>{tri.emoji}</span>
@@ -916,22 +910,23 @@ export default function AllbugsLife() {
                       </div>
                     </div>
                     <div style={{background:"white",borderRadius:10,padding:"6px 10px",textAlign:"center"}}>
-                      <p style={{margin:0,fontSize:10,color:tri.accent,fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>Due Date</p>
-                      <p style={{margin:0,fontSize:11,color:tri.accent,fontWeight:600}}>{new Date(dueDate.replace(/-/g,"\/")).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</p>
+                      <p style={{margin:0,fontSize:10,color:tri.accent,fontWeight:700,textTransform:"uppercase"}}>Due Date</p>
+                      <p style={{margin:0,fontSize:11,color:tri.accent,fontWeight:600}}>{dueDate}</p>
                     </div>
                   </div>
                   <p style={{margin:"0 0 10px",fontSize:12,color:"#374151",lineHeight:1.6}}>{tri.desc}</p>
-                  <div style={{background:"white",borderRadius:10,padding:"10px 12px"}}>
-                    <p style={{margin:"0 0 6px",fontSize:10,fontWeight:700,color:tri.accent,letterSpacing:1,textTransform:"uppercase"}}>This trimester 💛</p>
+                  <div style={{background:"white",borderRadius:10,padding:"10px 12px",marginBottom:10}}>
+                    <p style={{margin:"0 0 6px",fontSize:10,fontWeight:700,color:tri.accent,textTransform:"uppercase"}}>This trimester 💛</p>
                     {tri.tips.map(t=><p key={t} style={{margin:"3px 0",fontSize:11,color:"#374151"}}>• {t}</p>)}
                   </div>
-                  <div style={{marginTop:10,height:8,background:"#e5e7eb",borderRadius:99,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${Math.min(100,Math.round((pg.weeksAlong/40)*100))}%`,background:`linear-gradient(90deg,${tri.accent}88,${tri.accent})`,borderRadius:99,transition:"width 0.4s"}}/>
+                  <div style={{height:8,background:"#e5e7eb",borderRadius:99,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:Math.min(100,Math.round((pg.weeksAlong/40)*100))+"%",background:tri.accent,borderRadius:99}}/>
                   </div>
                   <p style={{margin:"4px 0 0",fontSize:10,color:tri.accent,textAlign:"right",fontWeight:600}}>{Math.min(100,Math.round((pg.weeksAlong/40)*100))}% of the journey 🌸</p>
                 </div>
               );
-            })() : showPhase&&<div style={{background:ph.light,borderRadius:14,padding:14,marginBottom:14,border:`1.5px solid ${ph.accent}33`}}>
+            })()}
+            {!pregnancyMode&&showPhase&&<div style={{background:ph.light,borderRadius:14,padding:14,marginBottom:14,border:`1.5px solid ${ph.accent}33`}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontSize:24}}>{ph.emoji}</span>
@@ -1154,42 +1149,31 @@ export default function AllbugsLife() {
               </div>
             </div>
 
-            {/* Toggles */}
-            <div style={{background:T.card,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:`1.5px solid ${T.border}`}}>
-              <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:700,color:T.text}}>⚙️ Display Options</h3>
-
-              {/* Phase toggle */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+            {/* Display Options */}
+            <div style={{background:T.card,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:"1.5px solid #e9d5ff"}}>
+              <p style={{margin:"0 0 14px",fontSize:14,fontWeight:700,color:T.text}}>Display Options</p>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingBottom:12,borderBottom:"1px solid #f3f4f6",marginBottom:12}}>
                 <div>
-                  <p style={{margin:"0 0 2px",fontSize:13,fontWeight:600,color:T.text}}>🌙 Phase Guide</p>
-                  <p style={{margin:0,fontSize:11,color:T.subtext,fontStyle:"italic"}}>Show cycle phase card on calendar</p>
+                  <p style={{margin:"0 0 2px",fontSize:13,fontWeight:600,color:T.text}}>Phase Guide</p>
+                  <p style={{margin:0,fontSize:11,color:T.subtext}}>Show cycle card on calendar</p>
                 </div>
-                <button onClick={()=>setShowPhase(p=>!p)}
-                  style={{width:52,height:28,borderRadius:99,border:"none",background:showPhase?T.accent:"#d1d5db",cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                <div onClick={()=>setShowPhase(p=>!p)} style={{width:52,height:28,borderRadius:99,background:showPhase?"#a855f7":"#d1d5db",cursor:"pointer",position:"relative",flexShrink:0}}>
                   <div style={{width:22,height:22,borderRadius:"50%",background:"white",position:"absolute",top:3,left:showPhase?27:3,transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
-                </button>
+                </div>
               </div>
-
-              {/* Pregnancy toggle */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:pregnancyMode?14:0}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:pregnancyMode?12:0}}>
                 <div>
-                  <p style={{margin:"0 0 2px",fontSize:13,fontWeight:600,color:T.text}}>🍼 Pregnancy Mode</p>
-                  <p style={{margin:0,fontSize:11,color:T.subtext,fontStyle:"italic"}}>Replace phase card with baby countdown</p>
+                  <p style={{margin:"0 0 2px",fontSize:13,fontWeight:600,color:T.text}}>Pregnancy Mode</p>
+                  <p style={{margin:0,fontSize:11,color:T.subtext}}>Baby countdown instead of phase card</p>
                 </div>
-                <button onClick={()=>setPregnancyMode(p=>!p)}
-                  style={{width:52,height:28,borderRadius:99,border:"none",background:pregnancyMode?"#be185d":"#d1d5db",cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                <div onClick={()=>setPregnancyMode(p=>!p)} style={{width:52,height:28,borderRadius:99,background:pregnancyMode?"#be185d":"#d1d5db",cursor:"pointer",position:"relative",flexShrink:0}}>
                   <div style={{width:22,height:22,borderRadius:"50%",background:"white",position:"absolute",top:3,left:pregnancyMode?27:3,transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
-                </button>
-              </div>
-
-              {/* Due date input */}
-              {pregnancyMode&&(
-                <div style={{marginTop:4}}>
-                  <label style={{fontSize:10,fontWeight:700,color:T.subtext,letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Due Date 🌟</label>
-                  <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}
-                    style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #fbb6ce",fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:T.text,background:T.card}}/>
                 </div>
-              )}
+              </div>
+              {pregnancyMode&&<div style={{marginTop:12}}>
+                <p style={{margin:"0 0 6px",fontSize:11,fontWeight:700,color:"#be185d",letterSpacing:1,textTransform:"uppercase"}}>Due Date</p>
+                <input type="date" value={dueDate||""} onChange={e=>setDueDate(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #fbb6ce",fontSize:13,outline:"none",boxSizing:"border-box",color:T.text}}/>
+              </div>}
             </div>
 
             {/* Profile editor */}
