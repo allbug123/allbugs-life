@@ -472,10 +472,13 @@ export default function AllbugsLife() {
   // Compute current cycle day from start date
   const cycleDay = (() => {
     if (!cycleStartDate) return 1;
-    const start = new Date(cycleStartDate);
-    const today = new Date();
+    const [y,m,d] = cycleStartDate.split("-").map(Number);
+    const start = new Date(y, m-1, d);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-    return ((diff % 20) + 20) % 20 + 1;
+    if (diff < 0) return 1;
+    return (diff % 20) + 1;
   })();
   const ph=getPhase(cycleDay);
 
