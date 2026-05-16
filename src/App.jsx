@@ -9,17 +9,23 @@ const supabase = createClient(
 const S = {
   get: async (k, userId) => {
     try {
-      if (!userId) { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; }
-      const { data } = await supabase.from("user_data").select("value").eq("user_id", userId).eq("key", k).single();
-      return data ? JSON.parse(data.value) : null;
-    } catch { return null; }
+      const uid = userId || localStorage.getItem("userId");
+      if (!uid) { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; }
+      const { data } = await supabase.from("user_data").select("value").eq("user_id", uid).eq("key", k).single();
+      if (data) return JSON.parse(data.value);
+      // fallback to localStorage
+      const r = localStorage.getItem(k); return r ? JSON.parse(r) : null;
+    } catch { 
+      try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch { return null; }
+    }
   },
   set: async (k, v, userId) => {
     try {
       localStorage.setItem(k, JSON.stringify(v));
-      if (!userId) return;
-      await supabase.from("user_data").upsert({ user_id: userId, key: k, value: JSON.stringify(v), updated_at: new Date().toISOString() }, { onConflict: "user_id,key" });
-    } catch {}
+      const uid = userId || window.__userId || localStorage.getItem("userId");
+      if (!uid) return;
+      await supabase.from("user_data").upsert({ user_id: uid, key: k, value: JSON.stringify(v), updated_at: new Date().toISOString() }, { onConflict: "user_id,key" });
+    } catch { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
   },
 };
 
@@ -961,7 +967,7 @@ export default function AllbugsLife() {
         {/* MANAGE */}
         {view==="manage"&&(
           <div>
-            <p style={{fontSize:12,color:"#9ca3af",fontStyle:"italic",marginBottom:14}}>Add custom habits to any section.</p>
+            <p style={{fontSize:12,color:"#9ca3af",fontStyle:"italic",marginBottom:14}}>Add or remove habits from any section — including defaults 🌿</p>
             {SECTION_META.map(sec=>{
               const sh=habits.filter(h=>h.section===sec.key);const isAdding=addingToSection===sec.key;
               return(<div key={sec.key} style={{background:"white",borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:12,border:`1.5px solid ${isAdding?sec.accent+"44":"#f3f4f6"}`}}>
@@ -970,7 +976,7 @@ export default function AllbugsLife() {
                   <button onClick={()=>setAddingToSection(isAdding?null:sec.key)} style={{padding:"4px 10px",borderRadius:20,border:`1.5px solid ${sec.accent}`,background:isAdding?sec.accent:"white",color:isAdding?"white":sec.accent,fontSize:11,fontWeight:600,cursor:"pointer"}}>{isAdding?"Cancel":"+ Add"}</button>
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:isAdding?12:0}}>
-                  {sh.map(h=>{const isDef=!!DEFAULT_HABITS.find(d=>d.id===h.id);return(<div key={h.id} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:20,background:h.color+"18",border:`1.5px solid ${h.color+"44"}`}}><span style={{fontSize:11}}>{h.emoji}</span><span style={{fontSize:11,color:"#374151"}}>{h.label}</span>{!isDef&&<button onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:11,padding:"0 0 0 2px"}}>✕</button>}</div>);})}
+                  {sh.map(h=>(<div key={h.id} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:20,background:h.color+"18",border:`1.5px solid ${h.color+"44"}`}}><span style={{fontSize:11}}>{h.emoji}</span><span style={{fontSize:11,color:"#374151"}}>{h.label}</span><button onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:11,padding:"0 0 0 2px"}}>✕</button></div>))}
                 </div>
                 {isAdding&&(
                   <div style={{borderTop:`1px solid ${sec.accent}22`,paddingTop:12}}>
