@@ -353,6 +353,7 @@ export default function AllbugsLife() {
   const [myAvatar,setMyAvatar] = useState("🐛");
   const [myPin,setMyPin] = useState("");
   const [pinError,setPinError] = useState("");
+  const [userId,setUserId] = useState(localStorage.getItem("userId")||"");
 
   const [year,setYear] = useState(now.getFullYear());
   const [month,setMonth] = useState(now.getMonth());
@@ -410,24 +411,28 @@ export default function AllbugsLife() {
       const mp=await S.get("myPost",savedUserId); if(mp)setMyPost(mp);
       const fl=await S.get("folders",savedUserId); if(fl)setFolders(fl);
       const en=await S.get("entries",savedUserId); if(en)setEntries(en);
-      const cd=await S.get("cycleStartDate",savedUserId); if(cd)setCycleStartDate(cd);
-      const cl=await S.get("cycleLength",savedUserId); if(cl)setCycleLength(cl);
+      const cd=await S.get("cycleStartDate",savedUserId);
+      if(cd) setCycleStartDate(cd);
+      else if(data.cycle_start_date) setCycleStartDate(data.cycle_start_date);
+      const cl=await S.get("cycleLength",savedUserId);
+      if(cl) setCycleLength(cl);
+      else if(data.cycle_length) setCycleLength(data.cycle_length);
       setLoaded(true);
       if (savedUserId) window.__userId = savedUserId;
     })();
   },[]);
 
-  useEffect(()=>{if(loaded)S.set("habitData",data,window.__userId);},[data,loaded]);
-  useEffect(()=>{if(loaded)S.set("habits",habits,window.__userId);},[habits,loaded]);
-  useEffect(()=>{if(loaded)S.set("journal",journal,window.__userId);},[journal,loaded]);
-  useEffect(()=>{if(loaded)S.set("goals",goals,window.__userId);},[goals,loaded]);
-  useEffect(()=>{if(loaded)S.set("reactions",reactions,window.__userId);},[reactions,loaded]);
-  useEffect(()=>{if(loaded)S.set("friends",friends,window.__userId);},[friends,loaded]);
-  useEffect(()=>{if(loaded)S.set("myPost",myPost,window.__userId);},[myPost,loaded]);
-  useEffect(()=>{if(loaded)S.set("folders",folders,window.__userId);},[folders,loaded]);
-  useEffect(()=>{if(loaded)S.set("entries",entries,window.__userId);},[entries,loaded]);
-  useEffect(()=>{if(loaded&&cycleStartDate)S.set("cycleStartDate",cycleStartDate,window.__userId);},[cycleStartDate,loaded]);
-  useEffect(()=>{if(loaded)S.set("cycleLength",cycleLength,window.__userId);},[cycleLength,loaded]);
+  useEffect(()=>{if(loaded&&userId)S.set("habitData",data,userId);},[data,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("habits",habits,userId);},[habits,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("journal",journal,userId);},[journal,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("goals",goals,userId);},[goals,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("reactions",reactions,userId);},[reactions,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("friends",friends,userId);},[friends,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("myPost",myPost,userId);},[myPost,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("folders",folders,userId);},[folders,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("entries",entries,userId);},[entries,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId&&cycleStartDate)S.set("cycleStartDate",cycleStartDate,userId);},[cycleStartDate,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("cycleLength",cycleLength,userId);},[cycleLength,loaded,userId]);
 
   const saveProfile = async () => {
     if(!myUsername||!myDisplay||myPin.length<4)return;
@@ -441,12 +446,18 @@ export default function AllbugsLife() {
       }
       await supabase.from("profiles").upsert({ id: userId, username: myUsername, display_name: myDisplay, avatar: myAvatar, pin: myPin }, { onConflict: "id" });
     } catch {}
-    localStorage.setItem("userId", userId);
+    localStorage.setItem("userId", myUsername);
     localStorage.setItem("userPin", myPin);
-    window.__userId = userId;
+    window.__userId = myUsername;
+    setUserId(myUsername);
     S.set("profile",{username:myUsername,display:myDisplay,avatar:myAvatar,pin:myPin}, userId);
-    if (cycleStartDate) S.set("cycleStartDate", cycleStartDate, userId);
-    S.set("cycleLength", cycleLength, userId);
+    // Save cycle info both to user_data and profiles for reliability
+    if (cycleStartDate) await S.set("cycleStartDate", cycleStartDate, userId);
+    await S.set("cycleLength", cycleLength, userId);
+    // Also update profiles table directly
+    try {
+      await supabase.from("profiles").update({ cycle_start_date: cycleStartDate, cycle_length: cycleLength }).eq("id", userId);
+    } catch {}
     setLoaded(true);
     setScreen("app");
   };
@@ -481,6 +492,7 @@ export default function AllbugsLife() {
     localStorage.removeItem("userId");
     localStorage.removeItem("userPin");
     window.__userId = null;
+    setUserId("");
     setScreen("setup");
     setMyUsername(""); setMyDisplay(""); setMyAvatar("🐛"); setMyPin("");
     setData({}); setHabits(DEFAULT_HABITS); setJournal({}); setGoals({});
@@ -515,6 +527,7 @@ export default function AllbugsLife() {
       localStorage.setItem("userId", myUsername);
       localStorage.setItem("userPin", myPin);
       window.__userId = myUsername;
+      setUserId(myUsername);
       const savedUserId = myUsername;
       const d=await S.get("habitData",savedUserId); if(d)setData(d);
       const h=await S.get("habits",savedUserId); if(h)setHabits(h);
