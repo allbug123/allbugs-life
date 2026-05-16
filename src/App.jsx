@@ -113,6 +113,66 @@ const DEFAULT_ENTRIES = [
 const REACTIONS = ["🧡","🌸","🌿","✨","💪","🐛","🌙","🎉"];
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const EMOJI_OPTIONS = ["⭐","🎯","💪","🧘","📚","🎨","💧","🏃","🛁","🌸","🍵","🎵","🧹","💻","🐾","🌙","🌿","✨","💊","📝","🪥","🍳","🥗","📧","📋","🧺","🥦","🍓","🐶","🐱","🦋","🌺","🌻","🌈","⚡","🔥","❄️","🎪","🏋️","🚴","🧗","🏊","🎭","🎬","🎤","🎸","🎹","🎺","🎻","🥁","🎲","♟️","🎯","🎳","⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🚀","🛸","🌍","🏔️","🏖️","🌊","🌋","🦁","🐘","🦒","🐬","🦅","🌴","🍎","🍊","🍋","🍇","🍉","🍕","🍜","🥑","🧁","🍩","☕","🧃","🥤","🫖","💐","🌷","🌹","🍀","🎋","🪴","💎","👑","🎀","🎁","🏆","🥇","🎖️","📸","📱","💡","🔑","🗝️","🧲","🔭","🧬","⚗️","🩺","💉","🩹","🧸","🪆","🎠","🎡","🎢"];
+
+const THEMES = {
+  bloom: {
+    name: "Bloom", emoji: "🌸",
+    bg: "linear-gradient(135deg,#fdf4ff,#f0fdf4,#fff1f2)",
+    header: "linear-gradient(135deg,#f3e8ff,#fce7f3,#d1fae5)",
+    border: "#e9d5ff",
+    accent: "#a855f7",
+    accent2: "#f472b6",
+    light: "#f3e8ff",
+    text: "#1f2937",
+    subtext: "#6b7280",
+    card: "white",
+    tab: "#f3f4f6",
+    button: "linear-gradient(135deg,#c084fc,#a855f7)",
+  },
+  minimal: {
+    name: "Minimal", emoji: "🖤",
+    bg: "#ffffff",
+    header: "#f9fafb",
+    border: "#e5e7eb",
+    accent: "#111827",
+    accent2: "#374151",
+    light: "#f3f4f6",
+    text: "#111827",
+    subtext: "#6b7280",
+    card: "white",
+    tab: "#f3f4f6",
+    button: "linear-gradient(135deg,#374151,#111827)",
+  },
+  latte: {
+    name: "Latte", emoji: "🤍",
+    bg: "linear-gradient(135deg,#fdf8f0,#faf5eb,#fef9f0)",
+    header: "linear-gradient(135deg,#f5ede0,#f0e6d3,#faf0e6)",
+    border: "#e8d5b7",
+    accent: "#92694a",
+    accent2: "#b8895a",
+    light: "#fdf0e0",
+    text: "#3d2b1f",
+    subtext: "#8b6f5e",
+    card: "#fffcf8",
+    tab: "#f5ede0",
+    button: "linear-gradient(135deg,#b8895a,#92694a)",
+  },
+  forest: {
+    name: "Forest", emoji: "🌿",
+    bg: "linear-gradient(135deg,#f0fdf4,#ecfdf5,#f0faf4)",
+    header: "linear-gradient(135deg,#dcfce7,#d1fae5,#ecfdf5)",
+    border: "#a7f3d0",
+    accent: "#059669",
+    accent2: "#10b981",
+    light: "#d1fae5",
+    text: "#064e3b",
+    subtext: "#6b7280",
+    card: "white",
+    tab: "#ecfdf5",
+    button: "linear-gradient(135deg,#10b981,#059669)",
+  },
+};
+
 const SECTION_COLORS = ["#a855f7","#f472b6","#34d399","#60a5fa","#fb923c","#f59e0b","#6ee7b7","#818cf8","#fda4af","#67e8f9"];
 
 const MOCK_USERS = {
@@ -367,6 +427,7 @@ export default function AllbugsLife() {
   const [cycleLength,setCycleLength] = useState(20);
   const [showCycleSetup,setShowCycleSetup] = useState(false);
   const [isNewAccount,setIsNewAccount] = useState(true);
+  const [themeName,setThemeName] = useState("bloom");
 
   const [journal,setJournal] = useState({});
   const [journalDay,setJournalDay] = useState(null);
@@ -433,6 +494,7 @@ export default function AllbugsLife() {
   useEffect(()=>{if(loaded&&userId)S.set("folders",folders,userId);},[folders,loaded,userId]);
   useEffect(()=>{if(loaded&&userId)S.set("entries",entries,userId);},[entries,loaded,userId]);
   useEffect(()=>{if(loaded&&userId&&cycleStartDate)S.set("cycleStartDate",cycleStartDate,userId);},[cycleStartDate,loaded,userId]);
+  useEffect(()=>{if(loaded&&userId)S.set("theme",themeName,userId);},[themeName,loaded,userId]);
   useEffect(()=>{if(loaded&&userId)S.set("cycleLength",cycleLength,userId);},[cycleLength,loaded,userId]);
 
   const saveProfile = async () => {
@@ -497,7 +559,7 @@ export default function AllbugsLife() {
     setScreen("setup");
     setMyUsername(""); setMyDisplay(""); setMyAvatar("🐛"); setMyPin("");
     setData({}); setHabits(DEFAULT_HABITS); setJournal({}); setGoals({});
-    setFriends({luna_girl:"friend"}); setReactions({}); setCycleStartDate(null); setCycleLength(20); setIsNewAccount(true);
+    setFriends({luna_girl:"friend"}); setReactions({}); setCycleStartDate(null); setCycleLength(20); setIsNewAccount(true); setThemeName("bloom");
   };
   const prevMonth=()=>{if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1);setSelectedDay(null);};
   const nextMonth=()=>{if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1);setSelectedDay(null);};
@@ -515,6 +577,7 @@ export default function AllbugsLife() {
     return (diff % len) + 1;
   })();
   const ph=getPhase(cycleDay, cycleLength||20);
+  const T = THEMES[themeName] || THEMES.bloom;
 
   // Login handler
   const handleLogin = async () => {
@@ -541,6 +604,7 @@ export default function AllbugsLife() {
       const en=await S.get("entries",savedUserId); if(en)setEntries(en);
       const cd=await S.get("cycleStartDate",savedUserId); if(cd)setCycleStartDate(cd);
       const cl=await S.get("cycleLength",savedUserId); if(cl)setCycleLength(cl);
+      const th=await S.get("theme",savedUserId); if(th)setThemeName(th);
       setScreen("app");
       setTimeout(()=>setLoaded(true), 300);
     } catch(e) { setPinError("Something went wrong, try again"); }
@@ -632,7 +696,7 @@ export default function AllbugsLife() {
 
 
   return (
-    <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:"linear-gradient(135deg,#fdf4ff 0%,#f0fdf4 50%,#fff1f2 100%)"}}>
+    <div style={{fontFamily:"Georgia,serif",minHeight:"100vh",background:T.bg}}>
 
       {/* Cycle setup modal */}
       {showCycleSetup&&(
@@ -718,14 +782,14 @@ export default function AllbugsLife() {
       )}
 
       {/* Header */}
-      <div style={{background:"linear-gradient(135deg,#f3e8ff,#fce7f3,#d1fae5)",borderBottom:"2px solid #e9d5ff",padding:"18px 16px 14px"}}>
+      <div style={{background:T.header,borderBottom:`2px solid ${T.border}`,padding:"18px 16px 14px"}}>
         <div style={{maxWidth:520,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <Avatar a={myAvatar} size={38}/>
               <div>
-                <p style={{margin:0,fontSize:10,letterSpacing:2,color:"#a855f7",textTransform:"uppercase"}}>Habit Tracker</p>
-                <h1 style={{fontSize:20,fontWeight:700,color:"#1f2937",margin:"1px 0 0"}}>Allbug's Life 🐛</h1>
+                <p style={{margin:0,fontSize:10,letterSpacing:2,color:T.accent,textTransform:"uppercase"}}>Habit Tracker</p>
+                <h1 style={{fontSize:20,fontWeight:700,color:T.text,margin:"1px 0 0"}}>Allbug's Life 🐛</h1>
               </div>
             </div>
             <div style={{display:"flex",gap:6}}>
@@ -751,7 +815,7 @@ export default function AllbugsLife() {
             ].map(({label,value,emoji})=>(
               <div key={label} style={{flex:1,background:"white",borderRadius:10,padding:"6px 4px",textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
                 <div style={{fontSize:13}}>{emoji}</div>
-                <div style={{fontSize:13,fontWeight:700,color:"#a855f7"}}>{value}</div>
+                <div style={{fontSize:13,fontWeight:700,color:T.accent}}>{value}</div>
                 <div style={{fontSize:9,color:"#9ca3af"}}>{label}</div>
               </div>
             ))}
@@ -761,9 +825,9 @@ export default function AllbugsLife() {
 
       {/* Tabs */}
       <div style={{maxWidth:520,margin:"12px auto 0",padding:"0 16px"}}>
-        <div style={{display:"flex",background:"#f3f4f6",borderRadius:10,padding:3,gap:2}}>
+        <div style={{display:"flex",background:T.tab,borderRadius:10,padding:3,gap:2}}>
           {[["grid","📅"],["stats","📊"],["goals","🎯"],["friends","🌸"],["library","📚"],["manage","⚙️"]].map(([k,label])=>(
-            <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"7px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:15,background:view===k?"white":"transparent",boxShadow:view===k?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.2s"}}>{label}</button>
+            <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"7px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:15,background:view===k?T.card:"transparent",boxShadow:view===k?"0 1px 4px rgba(0,0,0,0.1)":"none",transition:"all 0.2s",color:view===k?T.accent:T.subtext}}>{label}</button>
           ))}
         </div>
       </div>
@@ -982,7 +1046,66 @@ export default function AllbugsLife() {
         {/* MANAGE */}
         {view==="manage"&&(
           <div>
-            <p style={{fontSize:12,color:"#9ca3af",fontStyle:"italic",marginBottom:14}}>Add or remove habits from any section — including defaults 🌿</p>
+
+            {/* Theme picker */}
+            <div style={{background:T.card,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:`1.5px solid ${T.border}`}}>
+              <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:700,color:T.text}}>🎨 Color Theme</h3>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {Object.entries(THEMES).map(([key,theme])=>(
+                  <button key={key} onClick={()=>setThemeName(key)}
+                    style={{flex:1,minWidth:70,padding:"10px 8px",borderRadius:12,border:`2px solid ${themeName===key?theme.accent:T.border}`,background:themeName===key?theme.light:T.card,cursor:"pointer",textAlign:"center"}}>
+                    <div style={{fontSize:20,marginBottom:4}}>{theme.emoji}</div>
+                    <div style={{fontSize:11,fontWeight:600,color:themeName===key?theme.accent:T.subtext}}>{theme.name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Profile editor */}
+            <div style={{background:T.card,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:`1.5px solid ${T.border}`}}>
+              <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:700,color:T.text}}>👤 Edit Profile</h3>
+              <div style={{marginBottom:10}}>
+                <label style={{fontSize:10,fontWeight:700,color:T.subtext,letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Avatar</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {["🐛","🌸","🌿","🦋","🌙","🐾","🌊","🍓","✨","🌻"].map(e=>(
+                    <button key={e} onClick={()=>setMyAvatar(e)} style={{width:36,height:36,borderRadius:8,border:`2px solid ${myAvatar===e?T.accent:T.border}`,background:myAvatar===e?T.light:T.card,fontSize:18,cursor:"pointer"}}>{e}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{marginBottom:10}}>
+                <label style={{fontSize:10,fontWeight:700,color:T.subtext,letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Display Name</label>
+                <input value={myDisplay} onChange={e=>setMyDisplay(e.target.value)}
+                  style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid ${T.border}`,fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:T.text,background:T.card}}/>
+              </div>
+              <div style={{marginBottom:10}}>
+                <label style={{fontSize:10,fontWeight:700,color:T.subtext,letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Cycle Start Date</label>
+                <input type="date" value={cycleStartDate||""} onChange={e=>setCycleStartDate(e.target.value)}
+                  style={{width:"100%",padding:"9px 12px",borderRadius:10,border:`1.5px solid ${T.border}`,fontSize:13,fontFamily:"Georgia,serif",outline:"none",boxSizing:"border-box",color:T.text,background:T.card}}/>
+              </div>
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:10,fontWeight:700,color:T.subtext,letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:5}}>Cycle Length</label>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {[20,21,24,28,30,32,35].map(n=>(
+                    <button key={n} onClick={()=>setCycleLength(n)}
+                      style={{padding:"5px 12px",borderRadius:20,border:`1.5px solid ${cycleLength===n?T.accent:T.border}`,background:cycleLength===n?T.light:T.card,color:cycleLength===n?T.accent:T.subtext,fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={async()=>{
+                try {
+                  await supabase.from("profiles").update({display_name:myDisplay,avatar:myAvatar,cycle_start_date:cycleStartDate,cycle_length:cycleLength}).eq("id",userId);
+                  if(cycleStartDate)S.set("cycleStartDate",cycleStartDate,userId);
+                  S.set("cycleLength",cycleLength,userId);
+                  alert("Profile updated! 🌿");
+                } catch { alert("Error saving — try again"); }
+              }} style={{width:"100%",padding:11,borderRadius:12,border:"none",background:T.button,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif"}}>
+                Save Profile Changes ✨
+              </button>
+            </div>
+
+            <p style={{fontSize:12,color:T.subtext,fontStyle:"italic",marginBottom:14}}>Add or remove habits from any section — including defaults 🌿</p>
             {SECTION_META.map(sec=>{
               const sh=habits.filter(h=>h.section===sec.key);const isAdding=addingToSection===sec.key;
               return(<div key={sec.key} style={{background:"white",borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:12,border:`1.5px solid ${isAdding?sec.accent+"44":"#f3f4f6"}`}}>
