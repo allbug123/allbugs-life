@@ -486,6 +486,8 @@ export default function AllbugsLife() {
   const [reactions,setReactions] = useState({});
   const [inviteUsername,setInviteUsername] = useState("");
   const [inviteMsg,setInviteMsg] = useState("");
+  const [pendingRequests,setPendingRequests] = useState([]);
+  const [sentRequests,setSentRequests] = useState([]);
   const [viewingFriend,setViewingFriend] = useState(null);
 
   const [myPost,setMyPost] = useState({});
@@ -524,7 +526,7 @@ export default function AllbugsLife() {
       if(cl) setCycleLength(cl);
       else if(data.cycle_length) setCycleLength(data.cycle_length);
       setLoaded(true);
-      if (savedUserId) window.__userId = savedUserId;
+      if (savedUserId) { window.__userId = savedUserId; setTimeout(()=>loadFriendRequests(), 500); }
     })();
   },[]);
 
@@ -587,7 +589,47 @@ export default function AllbugsLife() {
   const addGoal=()=>{if(!newGoalText.trim())return;setGoals(p=>({...p,[monthKey]:[...(p[monthKey]||[]),{id:Date.now().toString(),text:newGoalText.trim(),done:false}]}));setNewGoalText("");};
 
   const react=(username,emoji)=>setReactions(p=>({...p,[username]:{...p[username],[emoji]:((p[username]?.[emoji])||0)+1}}));
-  const sendInvite=()=>{const u=inviteUsername.trim().toLowerCase();if(!u)return;if(MOCK_USERS[u]){setFriends(p=>({...p,[u]:"friend"}));setInviteMsg(`Added ${MOCK_USERS[u].displayName}!`);}else setInviteMsg("Invite sent! 🌸");setInviteUsername("");setTimeout(()=>setInviteMsg(""),3000);};
+  const loadFriendRequests = async () => {
+    if (!userId) return;
+    try {
+      const { data: pending } = await supabase.from("friend_requests").select("*").eq("to_user", userId).eq("status", "pending");
+      const { data: sent } = await supabase.from("friend_requests").select("*").eq("from_user", userId);
+      if (pending) setPendingRequests(pending);
+      if (sent) setSentRequests(sent);
+    } catch {}
+  };
+
+  const sendInvite = async () => {
+    const u = inviteUsername.trim().toLowerCase();
+    if (!u || !userId) return;
+    if (u === userId) { setInviteMsg("That's you! 🐛"); setInviteUsername(""); setTimeout(()=>setInviteMsg(""),3000); return; }
+    if (MOCK_USERS[u]) { setFriends(p=>({...p,[u]:"friend"})); setInviteMsg(`Added ${MOCK_USERS[u].displayName}!`); setInviteUsername(""); setTimeout(()=>setInviteMsg(""),3000); return; }
+    try {
+      const { data: profile } = await supabase.from("profiles").select("id,display_name").eq("username", u).maybeSingle();
+      if (!profile) { setInviteMsg("Username not found 🌿"); setInviteUsername(""); setTimeout(()=>setInviteMsg(""),3000); return; }
+      const existing = sentRequests.find(r => r.to_user === u);
+      if (existing) { setInviteMsg("Request already sent! 🌸"); setInviteUsername(""); setTimeout(()=>setInviteMsg(""),3000); return; }
+      await supabase.from("friend_requests").insert({ from_user: userId, to_user: u, status: "pending" });
+      setInviteMsg(`Friend request sent to ${profile.display_name||u}! 🌸`);
+      setSentRequests(p=>[...p, {from_user:userId, to_user:u, status:"pending"}]);
+    } catch { setInviteMsg("Something went wrong, try again"); }
+    setInviteUsername(""); setTimeout(()=>setInviteMsg(""),3000);
+  };
+
+  const acceptRequest = async (fromUser) => {
+    try {
+      await supabase.from("friend_requests").update({status:"accepted"}).eq("from_user", fromUser).eq("to_user", userId);
+      setFriends(p=>({...p,[fromUser]:"friend"}));
+      setPendingRequests(p=>p.filter(r=>r.from_user!==fromUser));
+    } catch {}
+  };
+
+  const declineRequest = async (fromUser) => {
+    try {
+      await supabase.from("friend_requests").update({status:"declined"}).eq("from_user", fromUser).eq("to_user", userId);
+      setPendingRequests(p=>p.filter(r=>r.from_user!==fromUser));
+    } catch {}
+  };
 
   const openJournal=(day)=>{const k=dateKey(day);setJournalDay(day);setJournalText(journal[k]?.gratitude||"");setJournalPhoto(journal[k]?.photo||null);};
   const saveJournal=()=>{const k=dateKey(journalDay);setJournal(p=>({...p,[k]:{gratitude:journalText,photo:journalPhoto}}));setJournalDay(null);};
@@ -658,6 +700,7 @@ export default function AllbugsLife() {
       const sp=await S.get("showPhase",savedUserId); if(sp!==null)setShowPhase(sp);
       setScreen("app");
       setTimeout(()=>setLoaded(true), 300);
+      setTimeout(()=>loadFriendRequests(), 500);
     } catch(e) { setPinError("Something went wrong, try again"); }
   };
 
@@ -1082,14 +1125,29 @@ export default function AllbugsLife() {
                 {!myPost[tk]?.gratitude&&!myPost[tk]?.photo&&<p style={{margin:0,fontSize:12,color:"#d1d5db",fontStyle:"italic"}}>Share a photo or gratitude with friends today 🌿</p>}
               </div>
             </div>
+            {/* Pending friend requests */}
+            {pendingRequests.length>0&&(
+              <div style={{background:"#fdf4ff",borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:"1.5px solid #e9d5ff"}}>
+                <h3 style={{margin:"0 0 10px",fontSize:14,fontWeight:700,color:"#a855f7"}}>🌸 Friend Requests</h3>
+                {pendingRequests.map(req=>(
+                  <div key={req.from_user} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #f3e8ff"}}>
+                    <p style={{margin:0,fontSize:13,fontWeight:600,color:"#1f2937"}}>@{req.from_user}</p>
+                    <div style={{display:"flex",gap:6}}>
+                      <button onClick={()=>acceptRequest(req.from_user)} style={{padding:"5px 12px",borderRadius:20,border:"none",background:"#a855f7",color:"white",fontSize:12,fontWeight:700,cursor:"pointer"}}>Accept 🌸</button>
+                      <button onClick={()=>declineRequest(req.from_user)} style={{padding:"5px 12px",borderRadius:20,border:"1.5px solid #e5e7eb",background:"white",color:"#9ca3af",fontSize:12,cursor:"pointer"}}>Decline</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div style={{background:"white",borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:"1.5px solid #f3e8ff"}}>
-              <h3 style={{margin:"0 0 10px",fontSize:14,fontWeight:700,color:"#1f2937"}}>🌸 Invite a Friend</h3>
+              <h3 style={{margin:"0 0 10px",fontSize:14,fontWeight:700,color:"#1f2937"}}>🌸 Add a Friend</h3>
               <div style={{display:"flex",gap:8}}>
                 <input value={inviteUsername} onChange={e=>setInviteUsername(e.target.value.toLowerCase())} onKeyDown={e=>e.key==="Enter"&&sendInvite()} placeholder="@username" style={{flex:1,padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",color:"#374151"}}/>
-                <button onClick={sendInvite} style={{padding:"10px 14px",borderRadius:10,border:"none",background:"#a855f7",color:"white",fontSize:13,fontWeight:700,cursor:"pointer"}}>Add</button>
+                <button onClick={sendInvite} style={{padding:"10px 14px",borderRadius:10,border:"none",background:"#a855f7",color:"white",fontSize:13,fontWeight:700,cursor:"pointer"}}>Send</button>
               </div>
               {inviteMsg&&<p style={{margin:"8px 0 0",fontSize:12,color:"#a855f7",fontStyle:"italic"}}>{inviteMsg}</p>}
-              <p style={{margin:"8px 0 0",fontSize:10,color:"#d1d5db",fontStyle:"italic"}}>Try: luna_girl · river_rae</p>
+              <p style={{margin:"8px 0 0",fontSize:10,color:"#d1d5db",fontStyle:"italic"}}>Try: luna_girl</p>
             </div>
             {Object.entries(friends).map(([username,tier])=>{
               const realFriendCount = Object.keys(friends).filter(u=>u!=="luna_girl").length;
