@@ -1150,7 +1150,7 @@ export default function AllbugsLife() {
             </div>
 
             {/* Display Options */}
-            <div style={{background:T.card,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:"1.5px solid #e9d5ff"}}>
+            <div style={{background:T.light,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:`2px solid ${T.accent}`}}>
               <p style={{margin:"0 0 14px",fontSize:14,fontWeight:700,color:T.text}}>Display Options</p>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingBottom:12,borderBottom:"1px solid #f3f4f6",marginBottom:12}}>
                 <div>
@@ -1175,29 +1175,7 @@ export default function AllbugsLife() {
                 <input type="date" value={dueDate||""} onChange={e=>setDueDate(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #fbb6ce",fontSize:13,outline:"none",boxSizing:"border-box",color:T.text}}/>
               </div>}
             </div>
-<div style={{background:"white",borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:"1.5px solid #e9d5ff"}}>
-              <p style={{margin:"0 0 14px",fontSize:14,fontWeight:700,color:"#1f2937"}}>Display Options</p>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingBottom:12,borderBottom:"1px solid #f3f4f6",marginBottom:12}}>
-                <div>
-                  <p style={{margin:"0 0 2px",fontSize:13,fontWeight:600,color:"#1f2937"}}>Phase Guide</p>
-                  <p style={{margin:0,fontSize:11,color:"#6b7280"}}>Show cycle card on calendar</p>
-                </div>
-                <div onClick={()=>setShowPhase(p=>!p)} style={{width:52,height:28,borderRadius:99,background:showPhase?"#a855f7":"#d1d5db",cursor:"pointer",position:"relative",flexShrink:0}}>
-                  <div style={{width:22,height:22,borderRadius:"50%",background:"white",position:"absolute",top:3,left:showPhase?27:3,transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
-                </div>
-              </div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:pregnancyMode?12:0}}>
-                <div>
-                  <p style={{margin:"0 0 2px",fontSize:13,fontWeight:600,color:"#1f2937"}}>Pregnancy Mode</p>
-                  <p style={{margin:0,fontSize:11,color:"#6b7280"}}>Baby countdown instead of phase card</p>
-                </div>
-                <div onClick={()=>setPregnancyMode(p=>!p)} style={{width:52,height:28,borderRadius:99,background:pregnancyMode?"#be185d":"#d1d5db",cursor:"pointer",position:"relative",flexShrink:0}}>
-                  <div style={{width:22,height:22,borderRadius:"50%",background:"white",position:"absolute",top:3,left:pregnancyMode?27:3,transition:"left 0.2s",boxShadow:"0 1px 3px rgba(0,0,0,0.2)"}}/>
-                </div>
-              </div>
-              {pregnancyMode&&<div style={{marginTop:12}}>
-                <p style={{margin:"0 0 6px",fontSize:11,fontWeight:700,color:"#be185d",letterSpacing:1,textTransform:"uppercase"}}>Due Date</p>
-                <input type="date" value={dueDate||""} onChange={e=>setDueDate(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid #fbb6ce",fontSize:13,outlin
+
             {/* Profile editor */}
             <div style={{background:T.card,borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:`1.5px solid ${T.border}`}}>
               <h3 style={{margin:"0 0 12px",fontSize:14,fontWeight:700,color:T.text}}>👤 Edit Profile</h3>
