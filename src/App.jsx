@@ -636,7 +636,11 @@ export default function AllbugsLife() {
   const handleJournalPhoto=(e)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=(ev)=>setJournalPhoto(ev.target.result);r.readAsDataURL(f);};
 
   const openPost=()=>{setPostText(myPost[tk]?.gratitude||"");setPostPhoto(myPost[tk]?.photo||null);setEditingPost(true);};
-  const savePost=()=>{setMyPost(p=>({...p,[tk]:{gratitude:postText,photo:postPhoto}}));setEditingPost(false);};
+  const savePost=()=>{
+    const todayK = todayKey();
+    setMyPost(p=>({...p,[todayK]:{gratitude:postText,photo:postPhoto}}));
+    setEditingPost(false);
+  };
   const handlePostPhoto=(e)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=(ev)=>setPostPhoto(ev.target.result);r.readAsDataURL(f);};
 
   const addHabit=(section)=>{if(!newHabitLabel.trim())return;const color=SECTION_COLORS[Math.floor(Math.random()*SECTION_COLORS.length)];setHabits(p=>[...p,{id:`custom_${Date.now()}`,label:newHabitLabel.trim(),emoji:newHabitEmoji,color,section}]);setNewHabitLabel("");setNewHabitEmoji("⭐");setAddingToSection(null);};
@@ -652,6 +656,7 @@ export default function AllbugsLife() {
   };
   const prevMonth=()=>{if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1);setSelectedDay(null);};
   const nextMonth=()=>{if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1);setSelectedDay(null);};
+  useEffect(()=>{ if(view==="friends"&&userId) loadFriendRequests(); },[view]);
   const filteredHabits=filterSection==="all"?habits:habits.filter(h=>h.section===filterSection);
   // Compute current cycle day from start date
   const cycleDay = (() => {
@@ -1140,7 +1145,10 @@ export default function AllbugsLife() {
               </div>
             )}
             <div style={{background:"white",borderRadius:14,padding:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)",marginBottom:14,border:"1.5px solid #f3e8ff"}}>
-              <h3 style={{margin:"0 0 10px",fontSize:14,fontWeight:700,color:"#1f2937"}}>🌸 Add a Friend</h3>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <h3 style={{margin:0,fontSize:14,fontWeight:700,color:"#1f2937"}}>🌸 Add a Friend</h3>
+                <button onClick={loadFriendRequests} style={{fontSize:11,padding:"4px 10px",borderRadius:20,border:"1.5px solid #e9d5ff",background:"#f3e8ff",color:"#a855f7",cursor:"pointer",fontWeight:600}}>🔄 Check requests</button>
+              </div>
               <div style={{display:"flex",gap:8}}>
                 <input value={inviteUsername} onChange={e=>setInviteUsername(e.target.value.toLowerCase())} onKeyDown={e=>e.key==="Enter"&&sendInvite()} placeholder="@username" style={{flex:1,padding:"10px 12px",borderRadius:10,border:"1.5px solid #e9d5ff",fontSize:13,fontFamily:"Georgia,serif",outline:"none",color:"#374151"}}/>
                 <button onClick={sendInvite} style={{padding:"10px 14px",borderRadius:10,border:"none",background:"#a855f7",color:"white",fontSize:13,fontWeight:700,cursor:"pointer"}}>Send</button>
