@@ -697,7 +697,6 @@ export default function AllbugsLife() {
       const sp=await S.get("showPhase",savedUserId); if(sp!==null)setShowPhase(sp);
       const pm=await S.get("pregnancyMode",savedUserId); if(pm!==null)setPregnancyMode(pm);
       const dd=await S.get("dueDate",savedUserId); if(dd)setDueDate(dd);
-      const sp=await S.get("showPhase",savedUserId); if(sp!==null)setShowPhase(sp);
       setScreen("app");
       setTimeout(()=>setLoaded(true), 300);
       setTimeout(()=>loadFriendRequests(), 500);
